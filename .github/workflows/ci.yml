@@ -43,8 +43,8 @@ jobs:
 
       - name: VM Test (tohu)
         if: matrix.host == 'tohu'
-        run: nix run github:nix-community/nixos-anywhere -- --flake .#tohu --vm-test
+        run: nix run --accept-flake-config github:nix-community/nixos-anywhere -- --flake .#tohu --vm-test
 
       - name: Build Disko Images (hyperv)
         if: matrix.host == 'hyperv'
-        run: nix build .#nixosConfigurations.hyperv.config.system.build.diskoImages
+        run: nix build --accept-flake-config .#nixosConfigurations.hyperv.config.system.build.diskoImages

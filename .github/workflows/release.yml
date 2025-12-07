@@ -34,7 +34,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Disko Image
-        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
+        run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
 
       - name: Prepare and Compress Image
         run: |
