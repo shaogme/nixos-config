@@ -20,12 +20,11 @@
         inherit nixos-facter-modules;
       };
 
-      # 这个函数接收两个参数：
-      # 1. system: 架构字符串 (如 "x86_64-linux" 或 "aarch64-linux")
-      # 2. extraModules: 模块列表
-      mkSystem = system: extraModules: nixpkgs.lib.nixosSystem {
-        inherit system; # 使用传入的 system 参数
-        specialArgs = commonArgs;
+      # 接收一个属性集作为参数：
+      # { system, diskDevice, extraModules }
+      mkSystem = { system, diskDevice, extraModules }: nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = commonArgs // { inherit diskDevice; };
         modules = [
           # 基础模块
           ./disk/auto-resize.nix
@@ -36,22 +35,33 @@
       nixosConfigurations = {
         
         # x86_64 机器
-        tohu = mkSystem "x86_64-linux" [
-          ./server/vps/hosts/tohu.nix
-          ./disk/vps/Swap-2G.nix
-        ];
+        tohu = mkSystem {
+          system = "x86_64-linux";
+          diskDevice = "/dev/sda";
+          extraModules = [
+            ./server/vps/hosts/tohu.nix
+            ./disk/vps/Swap-2G.nix
+          ];
+        };
 
-        hyperv = mkSystem "x86_64-linux" [
-          ./server/vps/hosts/hyperv.nix
-          ./disk/vps/Swap-4G.nix
-        ];
+        hyperv = mkSystem {
+          system = "x86_64-linux";
+          diskDevice = "/dev/sda";
+          extraModules = [
+            ./server/vps/hosts/hyperv.nix
+            ./disk/vps/Swap-4G.nix
+          ];
+        };
         
         # ARM 机器
-        # raspi = mkSystem "aarch64-linux" [
-        #   ./server/pi/hosts/raspi.nix
-        #   ./disk/pi/sd-card.nix
-        # ];
-
+        # raspi = mkSystem {
+        #   system = "aarch64-linux";
+        #   diskDevice = "/dev/sda";
+        #   extraModules = [
+        #     ./server/vps/hosts/raspi.nix
+        #     ./disk/pi/sd-card.nix
+        #   ];
+        # };
       };
     };
 }

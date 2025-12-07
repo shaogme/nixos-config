@@ -1,5 +1,5 @@
 { swapSize, imageSize }:
-{ lib, config, disko, ... }:
+{ lib, config, disko, diskDevice ? "/dev/sda", ... }:
 {
   imports = [
     disko.nixosModules.disko
@@ -10,7 +10,7 @@
     # 这里指定生成的 raw 文件初始大小。
     inherit imageSize;
 
-    device = "/dev/sda";
+    device = diskDevice;
     content = {
       type = "gpt";
       partitions = {
