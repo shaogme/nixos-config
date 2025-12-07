@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 {
-    services.nginx.package = pkgs.nginxQuic;
-
     networking.firewall.allowedUDPPorts = [ 443 ];
     networking.firewall.allowedTCPPorts = [ 80 443 ];
 
