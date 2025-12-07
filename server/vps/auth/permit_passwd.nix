@@ -8,15 +8,15 @@
     hashedPasswordFile = lib.mkForce null;
 
     initialHashedPassword = initialHashedPassword;
-
+    
     openssh.authorizedKeys.keys = authorizedKeys;
   };
 
   # --- SSH 安全加固 (配合使用) ---
   services.openssh = {
     settings = {
-      # 禁止 Root 密码登录
-      PermitRootLogin = "prohibit-password"; 
+      # 允许 Root 密码登录
+      PermitRootLogin = "yes"; 
       
       # 禁止空密码
       PermitEmptyPasswords = "no";
