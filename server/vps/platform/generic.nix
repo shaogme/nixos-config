@@ -27,6 +27,11 @@
 
   # --- 通用系统设置 ---
 
+  # 防火墙设置
+  networking.firewall.enable = true;
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  
   # 设置时区
   time.timeZone = "Asia/Shanghai";
 
@@ -78,9 +83,4 @@
 
   # Firefox 浏览器
   # programs.firefox.enable = true;
-
-  # 防火墙设置
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # networking.firewall.enable = false;
 }

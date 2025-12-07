@@ -14,7 +14,7 @@ mkSystem {
     ./software/container/podman.nix
     (import ./software/web/alist.nix {
       enable = true;
-      domain = "alist.tohu.shaog.hk";
+      domain = "alist.tohu.shaog.uk";
     })
     (import ./profiles/update/auto-upgrade.nix { allowReboot = true; })
     (import ./disk/common.nix { swapSize = 2048; })
