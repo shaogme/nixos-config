@@ -20,23 +20,6 @@
   # --- SSH 服务 ---
   services.openssh.enable = true;
   
-  # --- 网络配置 ---
-  networking = {
-    # true (默认值)：启用 "Predictable Network Interface Names"。系统会根据网卡的物理位置（PCI插槽）命名，如 ens18, enp3s0。
-    # false：禁用该功能。内核会按照枚举顺序命名网卡，对于单网卡的 VPS，这几乎 100% 会是 eth0。
-    usePredictableInterfaceNames = lib.mkDefault false;
-
-    useDHCP = lib.mkDefault true;
-    
-    # DNS 服务器 (Cloudflare / Google)
-    nameservers = [
-      "1.1.1.1"
-      "8.8.8.8"
-      "2606:4700:4700::1111"
-      "2001:4860:4860::8888"
-    ];
-  };
-
   # --- 自动更新配置 ---
   system.autoUpgrade = {
     enable = true;
@@ -84,9 +67,6 @@
   ];
 
   # --- 通用系统设置 ---
-  
-  # 默认启用 NetworkManager
-  networking.networkmanager.enable = lib.mkDefault true;
 
   # 设置时区
   time.timeZone = "Asia/Shanghai";

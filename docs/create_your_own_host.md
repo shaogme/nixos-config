@@ -55,36 +55,36 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 如果在上述检测中：
 
 **若支持 DHCP:**
-可以直接复制 `server/vps/hosts/hyperv.nix` 作为模板：
+可以直接复制 `server/vps/hyperv.nix` 作为模板：
 ```bash
-cp server/vps/hosts/hyperv.nix server/vps/hosts/<新主机名>.nix
+cp server/vps/hyperv.nix server/vps/<新主机名>.nix
 ```
-*记得修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `hyperv` 为你的 `<新主机名>`。*
+*记得修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `./facter/hyperv.json` 为 `./facter/<新主机名>.json`。*
 
 **若不支持 DHCP (需静态 IP):**
-请复制 `server/vps/hosts/tohu.nix` 作为模板：
+请复制 `server/vps/tohu.nix` 作为模板：
 ```bash
-cp server/vps/hosts/tohu.nix server/vps/hosts/<新主机名>.nix
+cp server/vps/tohu.nix server/vps/<新主机名>.nix
 ```
-*需修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `tohu` 为你的 `<新主机名>`，并根据你主机的实际网络情况修改 `networking` 部分的 IP、网关等配置。*
+*需修改 `<新主机名>.nix` 中 `facter.reportPath` 的 `./facter/tohu.json` 为 `./facter/<新主机名>.json`，并根据你主机的实际网络情况修改 `network` 相关配置。*
 
 **关于 SSH 登录配置**
 
-打开生成的 `<新主机名>.nix`，找到 `imports` 部分和 `initialHashedPassword` 设置。
+打开生成的 `<新主机名>.nix`，找到 `extraModules` 列表和 `auth` 导入部分。
 
 **1. 修改登录方式 (可选)**
 如果你希望允许密码登录（默认为仅 Key 登录），请将 `auth/default.nix` 修改为 `auth/permit_passwd.nix`：
 
 ```nix
-  imports =
-    [
-      ../platform/generic.nix
-      # 修改这里：default.nix (仅Key) -> permit_passwd.nix (允许密码)
-      (import ../auth/permit_passwd.nix {
-        # ...
-      })
-      nixos-facter-modules.nixosModules.facter
-    ];
+  extraModules = [
+    ./platform/generic.nix
+    # ...
+    # 修改这里：default.nix (仅Key) -> permit_passwd.nix (允许密码)
+    (import ./auth/permit_passwd.nix {
+       # ...
+    })
+    # ...
+  ];
 ```
 
 **2. 设置密码和 SSH Key**
@@ -96,13 +96,13 @@ nix run nixpkgs#mkpasswd -- -m sha-512
 然后替换配置文件中的 `initialHashedPassword` 和 `authorizedKeys`：
 
 ```nix
-      (import ../auth/permit_passwd.nix {
-        # 用生成的 Hash 替换下面的字符串
-        initialHashedPassword = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
-        
-        # 替换为你的 SSH 公钥
-        authorizedKeys = [ "ssh-ed25519 AAAA..." ];
-      })
+    (import ./auth/permit_passwd.nix {
+      # 用生成的 Hash 替换下面的字符串
+      initialHashedPassword = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
+      
+      # 替换为你的 SSH 公钥
+      authorizedKeys = [ "ssh-ed25519 AAAA..." ];
+    })
 ```
 
 ### 第四步：生成硬件报告 (facter.json)
@@ -114,29 +114,27 @@ nix run \
   --option experimental-features "nix-command flakes" \
   --option extra-substituters https://numtide.cachix.org \
   --option extra-trusted-public-keys numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE= \
-  github:nix-community/nixos-facter -- -o server/vps/hosts/facter/<新主机名>.json
+  github:nix-community/nixos-facter -- -o server/vps/facter/<新主机名>.json
 ```
-注意：我们将输出路径直接指定为了仓库中的 `server/vps/hosts/facter/<新主机名>.json` （假设你当前在仓库根目录下），如果不在，请移动该文件到对应位置。
+注意：我们将输出路径直接指定为了仓库中的 `server/vps/facter/<新主机名>.json` （假设你当前在仓库根目录下），如果不在，请移动该文件到对应位置。
 
 ### 第五步：注册新主机到 Flake
 
-编辑 `flake.nix`，在 `outputs` 的 `nixosConfigurations` 中添加你的新主机配置。参考 `hyperv` 的配置块，在下方增加：
+编辑 `server/vps.nix`，在返回的 Set 中添加你的新主机配置。参考 `tohu` 或 `hyperv` 的配置块，在下方增加：
 
 ```nix
-      # ... 现有配置 ...
-      
-      <新主机名> = mkSystem {
-          system = "x86_64-linux"; # 根据实际架构修改，如 aarch64-linux
-          diskDevice = "/dev/sda"; # 根据实际硬盘设备路径修改，如 /dev/vda, /dev/nvme0n1
-          extraModules = [
-            ./server/vps/hosts/<新主机名>.nix
-            ./disk/vps/Swap-4G.nix # 根据内存大小选择合适的 Swap 配置
-            {
-              networking.hostName = "<新主机名>";
-            }
-          ];
-        };
+  # ... 现有配置 ...
+  
+  <新主机名> = import ./vps/<新主机名>.nix {
+    inherit mkSystem;
+    pkgSrc = inputs.nixpkgs-25-11; # 或者使用 inputs.nixpkgs
+  };
 ```
+
+注意：
+1. 你的主机文件 `<新主机名>.nix` 应位于 `server/vps/` 目录下。
+2. 确保在 `<新主机名>.nix` 中正确配置了 `diskDevice` 和导入了必要的模块（如 `facter.reportPath`）。
+
 最后，提交所有修改到 Git（这对于 Flakes 很重要，未暂存的文件对 Flake 不可见）：
 ```bash
 git add .
@@ -151,15 +149,15 @@ git commit -m "Add new host: <新主机名>"
 
 除了基础的主机配置，你还可以深入定制系统行为。
 
-### 自定义磁盘和文件系统 (`disk/vps/common.nix`)
+### 自定义磁盘和文件系统 (`server/vps/disk/specific/common.nix`)
 
 该文件定义了通过 disko 进行的分区布局。
-- **文件位置**: `disk/vps/common.nix`
+- **文件位置**: `server/vps/disk/specific/common.nix`
 - **默认布局**: BIOS+GPT 兼容引导，ESP 分区，Swap 分区，以及一个 Btrfs Root 分区。
 - **Btrfs 子卷**: 默认创建了 `@`, `@home`, `@nix`, `@log` 四个子卷，并启用 zstd 压缩。
 
 **如何自定义：**
-如果你需要修改分区大小、增加加密 (LUKS) 或改变文件系统（如 ext4, xfs），可以创建 `disk/vps/common.nix` 的副本（例如 `disk/vps/custom.nix`），并在 `flake.nix` 中引用它，或者使用 Overlay 的方式覆盖参数。
+如果你需要修改分区大小、增加加密 (LUKS) 或改变文件系统（如 ext4, xfs），可以创建 `server/vps/disk/specific/common.nix` 的副本（例如 `custom.nix`），并创建对应的 Swap 封装文件（如 `Swap-Custom.nix`）来引用它。
 *注意：`common.nix` 接受 `swapSize` 和 `imageSize` 参数，这使得它可以被复用。*
 
 ### 自定义平台通用设置 (`server/vps/platform/generic.nix`)
@@ -178,4 +176,4 @@ git commit -m "Add new host: <新主机名>"
    ```nix
    time.timeZone = lib.mkForce "America/New_York";
    ```
-2. **模块化替换**: 如果你不想要这些通用设置，可以在 `<新主机名>.nix` 的 `imports` 中移除 `../platform/generic.nix`，并建立自己的 platform 模块。
+2. **模块化替换**: 如果你不想要这些通用设置，可以在 `<新主机名>.nix` 的 `extraModules` 中移除 `./platform/generic.nix`，并建立自己的 platform 模块。
