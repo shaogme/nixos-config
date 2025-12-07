@@ -14,7 +14,7 @@
   boot.kernelModules = [ "tcp_bbr" ];
 
   # 2. 网络栈参数调优
-  boot.kernelSysctl = {
+  boot.kernel.sysctl = {
     # --- 核心拥塞控制与队列管理 ---
     
     # 启用 BBR (在 CachyOS 内核中，这将激活 BBRv3)

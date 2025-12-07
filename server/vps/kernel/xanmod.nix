@@ -6,7 +6,7 @@
   boot.kernelModules = [ "tcp_bbr" ];
 
   # 3. 网络栈参数调优
-  boot.kernelSysctl = {
+  boot.kernel.sysctl = {
     # --- 核心算法 ---
     
     # 启用 BBR (XanMod 内核中 tcp_bbr 即为 BBRv3)
