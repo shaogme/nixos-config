@@ -11,12 +11,18 @@ let
     inherit nixos-facter-modules;
   };
 
-  mkSystem = { system, diskDevice, extraModules, pkgSrc ? inputs.nixpkgs }: 
+  mkSystem = { system, diskDevice, extraModules, pkgSrc ? inputs.nixpkgs }:
+    let
+      pkgs = import pkgSrc {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    in
     pkgSrc.lib.nixosSystem {
       inherit system;
       specialArgs = {
         inherit inputs diskDevice disko nixos-facter-modules;
-        pkgs = pkgSrc; # 让模块内部也感知到这是特定版本的 pkgs
+        inherit pkgs;
       };
       modules = [
         ./vps/disk/auto-resize.nix
