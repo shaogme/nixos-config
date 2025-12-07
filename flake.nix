@@ -2,6 +2,12 @@
 {
   description = "My NixOS Flake Configuration";
 
+  nixConfig = {
+    extra-substituters = [ "https://nyx.chaotic.cx" "https://chaotic-nyx.cachix.org" ];
+    extra-trusted-public-keys = [ "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8=" ];
+  };
+
+
   inputs = {
     # 默认源
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
