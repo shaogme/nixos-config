@@ -1,7 +1,9 @@
 { swapSize }:
 { lib, config, pkgs, disko, diskDevice ? "/dev/sda", ... }:
 let
-  imageSize = "${toString (swapSize + 3072)}M";
+  # 处理 swapSize 为 null 的情况，将其视为 0
+  safeSwapSize = if swapSize != null then swapSize else 0;
+  imageSize = "${toString (safeSwapSize + 3072)}M";
 in
 {
   imports = [
@@ -16,6 +18,7 @@ in
     device = diskDevice;
     content = {
       type = "gpt";
+      # 使用 // 运算符和 lib.optionalAttrs 来动态构建分区集合
       partitions = {
         # 为了在 BIOS+GPT 上启动
         boot = {
@@ -35,18 +38,21 @@ in
             mountOptions = [ "defaults" ];
           };
         };
-
-        # 2. Swap 分区
+      } 
+      # 仅在 safeSwapSize 大于 0 时添加 Swap 分区
+      // lib.optionalAttrs (safeSwapSize > 0) {
         swap = {
           priority = 2;
-          size = "${toString swapSize}M";
+          size = "${toString safeSwapSize}M";
           content = {
             type = "swap";
             discardPolicy = "both";
             resumeDevice = true;
           };
         };
-
+      } 
+      # 继续添加剩余的 Root 分区
+      // {
         # 3. Root 分区 (直接使用 Btrfs，移除 LUKS 加密层)
         root = {
           priority = 3;

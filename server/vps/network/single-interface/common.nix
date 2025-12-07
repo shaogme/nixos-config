@@ -18,7 +18,7 @@ let
 in
 {
   networking = {
-    inherit nameservers;
+    nameservers = lib.mkDefault nameservers;
     networkmanager.enable = false;
     
     # true (默认值)：启用 "Predictable Network Interface Names"。系统会根据网卡的物理位置（PCI插槽）命名，如 ens18, enp3s0。
