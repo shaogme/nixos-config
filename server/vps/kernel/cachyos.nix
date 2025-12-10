@@ -8,7 +8,8 @@
 
   boot.kernelPackages = pkgs.linuxPackages_cachyos;
 
-  services.scx.enable = true;
+  # scx_rustland旨在将交互式工作负载优先于后台CPU密集型工作负载。出于这个原因，此调度程序的典型用例涉及低延迟交互式应用程序，例如游戏，视频会议和实时流媒体。
+  services.scx.enable = false;
 
   # 1. 确保加载 BBR 模块 (对于 CachyOS 内核，tcp_bbr 即为 BBRv3)
   boot.kernelModules = [ "tcp_bbr" ];

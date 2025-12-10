@@ -16,6 +16,10 @@ mkSystem {
       enable = true;
       domain = "alist.tohu.shaog.uk";
     })
+    (import ./software/proxy/x-ui-yg.nix {
+      enable = true;
+      domain = "x-ui.tohu.shaog.uk";
+    })
     (import ./profiles/update/auto-upgrade.nix { allowReboot = true; })
     (import ./disk/common.nix { swapSize = 2048; })
     (import ./auth/default.nix {

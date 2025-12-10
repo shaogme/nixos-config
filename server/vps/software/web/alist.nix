@@ -1,14 +1,15 @@
-{ domain, enable ? true }:
+{ domain ? null, enable ? true }:
 { config, pkgs, lib, ... }:
 
 {
   imports = [
     ../container/podman.nix
+  ] ++ lib.optionals (domain != null) [
     ../../services/web/nginx.nix
   ];
 
   config = lib.mkIf enable {
-    # networking.firewall.allowedTCPPorts = [ 5244 ];
+    networking.firewall.allowedTCPPorts = lib.mkIf (domain == null) [ 5244 ];
 
     systemd.tmpfiles.rules = [
       "d /var/lib/alist 0755 root root -"
@@ -31,20 +32,22 @@
       };
     };
 
-    services.nginx.virtualHosts."${domain}" = {
-      forceSSL = true;
-      enableACME = true;
-      http3 = true;
-      quic = true;
-      
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:5244";
-        # proxyWebsockets is not needed if we rely on recommendedProxySettings or if standard proxying is enough, 
-        # but user removed it in previous step. I'll stick to what was there or standard.
-        # User removed proxyWebsockets = true; in previous step. Explicitly keeping it removed.
-        extraConfig = ''
-          client_max_body_size 0;
-        '';
+    services.nginx.virtualHosts = lib.mkIf (domain != null) {
+      "${domain}" = {
+        forceSSL = true;
+        enableACME = true;
+        http3 = true;
+        quic = true;
+        
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:5244";
+          # proxyWebsockets is not needed if we rely on recommendedProxySettings or if standard proxying is enough, 
+          # but user removed it in previous step. I'll stick to what was there or standard.
+          # User removed proxyWebsockets = true; in previous step. Explicitly keeping it removed.
+          extraConfig = ''
+            client_max_body_size 0;
+          '';
+        };
       };
     };
   };
