@@ -26,7 +26,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Update flake.lock
-        run: nix flake update
+        run: nix flake update --accept-flake-config
 
       - name: Create Pull Request
         id: cpr
