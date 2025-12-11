@@ -31,16 +31,27 @@ let
         }
       ] ++ extraModules;
     };
+
+  tohuConfig = import ./vps/tohu.nix {
+    inherit mkSystem;
+    pkgSrc = inputs.nixpkgs-small;
+  };
+
+  hypervConfig = import ./vps/hyperv.nix {
+    inherit mkSystem;
+    pkgSrc = inputs.nixpkgs-small;
+  };
 in
 {
-  # 注册部分 (策略)
-  # 直接返回最终的主机 Set，而不是只返回 mkSystem 工具
-  tohu = import ./vps/tohu.nix { 
-    inherit mkSystem;
-    pkgSrc = inputs.nixpkgs-small;
-   };
-  hyperv = import ./vps/hyperv.nix { 
-    inherit mkSystem;
-    pkgSrc = inputs.nixpkgs-small;
-   };
+  nixosConfigurations = {
+    tohu = tohuConfig;
+    hyperv = hypervConfig;
+  };
+
+  checks = {
+    x86_64-linux = {
+      tohu-test = tohuConfig.config.system.build.vmTest;
+      hyperv-test = hypervConfig.config.system.build.vmTest;
+    };
+  };
 }

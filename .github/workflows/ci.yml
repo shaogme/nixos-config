@@ -1,4 +1,4 @@
-name: Build NixOS Configuration
+name: Build and Test NixOS Configuration
 
 on:
   pull_request:
@@ -14,6 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 任务 1: 静态构建检查 (确保能编译生成系统)
   check-configuration:
     runs-on: ubuntu-latest
     strategy:
@@ -34,5 +35,39 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Build System Toplevel
-        # 相比 diskoImages，这能验证系统配置的有效性，但速度快得多
+        # 这一步只编译不运行，确保语法和依赖没问题
         run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+
+  # 任务 2: 动态虚拟机测试 (运行 QEMU 验证服务启动)
+  integration-tests:
+    needs: check-configuration # 可选：如果你希望构建失败就不跑测试，可以加上这就行；去掉则并行跑，速度更快
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            download-buffer-size = 268435456
+            # 确保 Nix 知道我们可以用 KVM
+            system-features = kvm big-parallel
+
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
+      # 如果没有这一步，虚拟机测试会极慢（纯软件模拟）
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
+
+      - name: Run NixOS Integration Tests
+        # 运行 flake.nix 中定义的 checks
+        # --print-build-logs 非常重要，如果测试挂了，你能看到 Python 脚本的报错输出
+        run: nix flake check --accept-flake-config --print-build-logs
