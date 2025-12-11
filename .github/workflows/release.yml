@@ -22,6 +22,8 @@ jobs:
         uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            download-buffer-size = 268435456
 
       - name: Build Disko Image
         run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
