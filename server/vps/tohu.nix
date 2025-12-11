@@ -35,8 +35,8 @@ mkSystem {
       networking.hostName = "tohu";
       facter.reportPath = ./facter/tohu.json;
       system.stateVersion = "25.11";
-      # 启用 copySystemConfiguration 模块，用于初始化 /etc/nixos
-      system.copySystemConfiguration.enable = true;
+      # 启用 copyFlakeToNixos 模块，用于初始化 /etc/nixos
+      system.copyFlakeToNixos.enable = true;
     })
   ];
 }

@@ -1,8 +1,8 @@
 { lib, config, inputs, ... }:
 let
-  cfg = config.system.copySystemConfiguration;
+  cfg = config.system.copyFlakeToNixos;
 in {
-  options.system.copySystemConfiguration = {
+  options.system.copyFlakeToNixos = {
     enable = lib.mkEnableOption "copying system configuration to /etc/nixos";
     
     force = lib.mkOption {
