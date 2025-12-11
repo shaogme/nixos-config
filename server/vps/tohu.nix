@@ -27,18 +27,16 @@ let
       name = "tohu-inline-test";
       
       # 1. 确保参数中有 lib 和 inputs
-      nodes.machine = { config, lib, inputs, ... }: 
+      nodes.machine = { config, lib, ... }: 
       let
-        # 2. 手动构建一个带有 CachyOS Overlay 的 pkgs 实例
-        # 必须使用 inputs.nixpkgs 重新实例化，因为宿主 pkgs 是锁定的
+        # 现在这里的 inputs 引用的是 testModule 传入的 inputs
+        # 它是已知的，不需要等待配置评估，打破了循环
         pkgsWithChaotic = import inputs.nixpkgs {
           inherit (pkgs) system;
           config.allowUnfree = true;
           overlays = [ inputs.chaotic.overlays.default ];
         };
       in {
-        # 3. 导入模块，并显式传入我们构建好的 pkgsWithChaotic
-        # 这样 cachyos-unstable.nix 就能找到 linuxPackages_cachyos 了
         imports = baseModules ++ appModules ++ [
           (import ./kernel/cachyos-unstable.nix { 
             pkgs = pkgsWithChaotic; 
@@ -46,15 +44,10 @@ let
           })
         ];
 
-        # 4. 强制测试虚拟机使用这个新的 pkgs 实例
-        # 解决 "is not of type Nixpkgs package set" 报错
         nixpkgs.pkgs = lib.mkForce pkgsWithChaotic;
-
-        # 5. 强制清空 overlays 配置
-        # 因为 pkgsWithChaotic 已经包含了 overlay，不需要再通过模块系统添加
-        # 这样可以解决 "overlays defined multiple times" 的冲突报错
         nixpkgs.overlays = lib.mkForce [];
 
+        # 依然可以将 inputs 注入到模块系统中，供子模块使用
         _module.args.inputs = inputs;
       };
 
