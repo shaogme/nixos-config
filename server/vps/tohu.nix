@@ -29,7 +29,7 @@ let
         nodes.machine = { config, ... }: {
           # 2. 测试机只导入 serviceModules
           imports = serviceModules ++ [
-            ./kernel/cachyos-unstable.nix
+            (import ./kernel/cachyos-unstable.nix { inherit pkgs inputs; })
           ];
 
           # 3. 模拟环境适配 (Mock)
