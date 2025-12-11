@@ -1,68 +1,79 @@
-# NixOS Configuration Library
+# NixOS Configuration (Cloud-Native)
 
-> **Note**: 当前库是个人配置文件库。若希望寻找模板库方便配置 NixOS，请前往 [https://github.com/ShaoG-R/nixos-config-template](https://github.com/ShaoG-R/nixos-config-template)。
+> **Note**: 本仓库是个人配置文件库。如果你正在寻找一个开箱即用的 NixOS 配置模板，请使用 [NixOS Config Template](https://github.com/ShaoG-R/nixos-config-template)。
 
-欢迎来到我的个人 NixOS 配置文件库。本项目旨在为 VPS 和服务器提供一套高性能、模块化且易于维护的 NixOS 配置方案。
+这是一个基于 **GitOps** 理念设计的 NixOS 配置仓库。它旨在实现：
+1. **完全的所有权**: 你拥有自己的 Git 仓库作为唯一真理源 (Source of Truth)。
+2. **云端构建**: 使用 GitHub Actions 构建系统镜像和验证配置，无需本地强大的机器。
+3. **自动交付**: 每日自动更新依赖，VPS 自动拉取最新配置并平滑升级。
 
-## 📖 文档指南
+---
 
-- **[安装与部署指南](docs/install.md)**: 包含多种安装方式（一键 DD、Anywhere、手动安装）。
-- **[如何创建自己的主机配置](docs/create_your_own_host.md)**: 了解如何添加和定制新的服务器。
+## 快速开始
 
-## 🏗️ 架构设计
+### 1. 初始化你的仓库
 
-本配置库采用了 **机制 (Mechanism) 与 策略 (Strategy) 分离** 的设计思想，确保配置的高度复用性和灵活性。
+要建立你自己的配置中心，请先 Fork 本仓库，并完成必要的 GitHub 设置（如 Token 配置）。
 
-### 核心机制 (`server/vps.nix`)
-`mkSystem` 函数封装了构建 NixOS 系统的通用逻辑。它并不关心具体开启了哪些服务，而是提供了一个标准的接口来接收配置：
-- `system`: 目标系统架构 (如 `x86_64-linux`)。
-- `diskDevice`: 目标磁盘设备。
-- `extraModules`: 一个模块列表，用于定义该主机特有的功能（策略）。
+👉 **[GitHub 仓库配置指南](docs/github_repo_config.md)** *(Start Here)*
 
-### 策略实现 (`server/vps/*.nix`)
-每个主机配置文件（如 `server/vps/tohu.nix`）代表一种具体的策略。它通过组合不同的模块来定义服务器的角色和功能。
+### 2. 添加/修改主机
 
-例如，`tohu` 主机的定义：
-```nix
-mkSystem {
-  # ...
-  extraModules = [
-    ./platform/generic.nix             # 通用基础配置
-    ./kernel/cachyos.nix               # 高性能内核
-    ./services/dns/smartdns-oversea.nix # DNS 优化
-    ./profiles/memory/aggressive.nix   # 内存激进优化
-    ./software/web/alist.nix           # 具体业务服务
-    # ...
-  ];
-}
+配置好仓库后，你可以在 `server/vps/` 下定义你自己的主机。我们推荐根据是否有 DHCP 环境来选择不同的模板。
+
+👉 **[如何创建新的主机配置](docs/create_your_own_host.md)**
+
+---
+
+## 全新安装指南
+
+当你添加了新主机并推送到 GitHub 后，可以通过以下方式进行安装。
+
+### 方式一：云端构建 + 一键 DD (推荐)
+
+最简单的安装方式。你不需要准备任何 Nix 环境。
+
+1. 在 GitHub Actions 页面手动运行 **Release System Images** 工作流。
+2. 等待构建完成，在 Releases 页面获取你的主机镜像链接 (`.tar.zst`)。
+3. 登录目标 VPS，执行通用 DD 脚本：
+
+```bash
+# 下载重装脚本 (以 bin456789/reinstall 为例)
+curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh || wget -O ${_##*/} $_
+
+# 替换为你的 Release 链接
+export IMAGE_URL="https://github.com/<你的用户名>/nixos-config/releases/latest/download/<主机名>.tar.zst"
+
+# 执行 DD
+bash reinstall.sh dd --img "$IMAGE_URL"
 ```
 
-## ✨ 关键特性模块
+### 方式二：Nixos-Anywhere (本地部署)
 
-本库包含多个精心调优的模块，开箱即用：
+如果你有本地 Nix 环境且能 SSH 到目标机器：
 
-### 🚀 高性能内核与网络 (`server/vps/kernel/cachyos.nix`)
-- **CachyOS 内核**: 采用 CachyOS 优化的内核，提供更好的调度性能。
-- **BBRv3 + CAKE**:默认启用 BBRv3 拥塞控制算法配合 CAKE 队列管理，显著降低 bufferbloat，提升弱网环境下的吞吐量和延迟表现。
-- **TCP 协议栈调优**: 针对现代网络环境优化了 TCP 窗口大小、Fast Open、连接追踪表等参数。
+```bash
+# 直接使用 flake 部署
+nix run github:nix-community/nixos-anywhere -- \
+  --flake .#<主机名> \
+  --target-host root@<IP地址> \
+  --build-on local
+```
 
-### 🌐 DNS 优化 (`server/vps/services/dns/smartdns-oversea.nix`)
-- **SmartDNS**: 使用 SmartDNS 作为本地 DNS 解析器。
-- **并行查询与测速**: 并发查询多个上游 DNS（如 Cloudflare, Google, Quad9），并基于 ping 和 tcp 握手进行测速，自动选择最快的 IP 地址返回。
-- **持久化缓存**: 配置了激进的缓存策略和预取功能，极大减少 DNS 查询延迟。
+---
 
-### 💾 内存优化 (`server/vps/profiles/memory/aggressive.nix`)
-- **ZRAM**: 针对小内存 VPS（如 1GB 甚至更小），启用了激进的 ZRAM 策略 (`zstd` 压缩)，将内存当做高速 Swap 使用。
-- **内核参数调优**: 调整 `vm.swappiness` 和 `vm.vfs_cache_pressure`，倾向于保留文件缓存并积极使用 ZRAM，配合 MGLRU 算法，防止系统在内存压力大时假死。
+## 日常维护
 
-### 🐳 容器化支持 (`server/vps/software/container/podman.nix`)
-- **Podman**: 默认使用 Podman 替代 Docker，提供更轻量级的容器运行环境。
-- **OCI Containers**: 通过 NixOS 模块声明式管理容器（如 AList），支持自动启动、卷挂载和网络配置。
+### 自动升级
+默认情况下，所有部署的主机都会在 **每天凌晨 04:00** 自动检查你的 GitHub 仓库 (`main` 分支)。如果有新提交（无论是你手动修改的，还是 CI 自动更新的依赖），系统都会自动下载并应用更新。
 
-### 🔒 安全与认证 (`server/vps/auth/default.nix`)
-- **声明式凭证**: Root 密码和 SSH 公钥通过 Nix 配置文件统一管理，部署即生效。
-- **SSH 加固**: 默认仅允许 Key 登录，禁用空密码，符合安全最佳实践。
+### 手动触发更新
+如果你不想等待自动更新，可以在 VPS 上直接运行：
 
-### 🛠️ 自动化分区 (`server/vps/disk/common.nix`)
-- **Disko 集成**: 使用 Disko 声明磁盘分区结构（GPT, ESP, Btrfs subvolumes, Swap），实现一键分区和格式化。
-- **Btrfs**: 根分区采用 Btrfs，并配置了 zstd 压缩，节省磁盘空间并提升读写寿命。
+```bash
+nixos-rebuild switch --flake github:<你的用户名>/nixos-config
+```
+
+### 依赖更新
+GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`，并通过 CI 测试后自动合并。你只需要坐享其成，或者处理 CI 失败的构建。
+
