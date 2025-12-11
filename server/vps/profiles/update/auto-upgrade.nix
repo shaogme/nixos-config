@@ -11,7 +11,7 @@
     dates = "04:00"; # 每天凌晨 4 点执行
     
     # 指定 Flake URI
-    flake = "git+file:///etc/nixos#${config.networking.hostName}";
+    flake = "path:/etc/nixos#${config.networking.hostName}";
     
     # 强制更新 nixpkgs input 以获取新软件版本
     flags = [
