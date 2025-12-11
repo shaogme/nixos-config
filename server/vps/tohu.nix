@@ -35,6 +35,7 @@ mkSystem {
       networking.hostName = "tohu";
       facter.reportPath = ./facter/tohu.json;
       system.stateVersion = "25.11";
+      # 用于生成raw镜像时复制系统配置
       system.copySystemConfiguration = true;
     }
   ];

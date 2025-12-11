@@ -21,6 +21,8 @@ mkSystem {
       networking.hostName = "hyperv";
       facter.reportPath = ./facter/hyperv.json;
       system.stateVersion = "25.11"; 
+      # 用于生成raw镜像时复制系统配置
+      # system.copySystemConfiguration = true;
     }
   ];
 }
