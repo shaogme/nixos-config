@@ -31,7 +31,7 @@ mkSystem {
         prefixLength = 24;
         gateway = "66.235.104.1";
     })
-    ({ inputs, ... }: {
+    {
       networking.hostName = "tohu";
       facter.reportPath = ./facter/tohu.json;
       system.stateVersion = "25.11";
@@ -44,6 +44,6 @@ mkSystem {
         "z /etc/nixos 0755 root root -"
         "Z /etc/nixos - root root -"  # 递归调整内部文件
       ];
-    })
+    }
   ];
 }
