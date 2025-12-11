@@ -76,3 +76,4 @@ nixos-rebuild switch --flake github:<你的用户名>/nixos-config
 
 ### 依赖更新
 GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`，并通过 CI 测试后自动合并。你只需要坐享其成，或者处理 CI 失败的构建。
+
