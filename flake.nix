@@ -19,7 +19,12 @@
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
   };
 
-  outputs = { self, ... }@inputs: {
-    nixosConfigurations = import ./server/vps.nix { inherit inputs; };
+  outputs = { self, ... }@inputs:
+  let
+    vpsOutputs = import ./server/vps.nix { inherit inputs; };
+  in 
+  {
+    nixosConfigurations = vpsOutputs.nixosConfigurations;
+    checks = vpsOutputs.checks;
   };
 }

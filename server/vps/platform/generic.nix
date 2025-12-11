@@ -28,7 +28,7 @@
   # --- 通用系统设置 ---
 
   # 防火墙设置
-  networking.firewall.enable = true;
+  # networking.firewall.enable = true;
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   
