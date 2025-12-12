@@ -19,7 +19,6 @@
     nixosModules = {
       default = { config, pkgs, lib, ... }: {
         imports = [
-          disko.nixosModules.disko
           nixos-facter-modules.nixosModules.facter
           
           ./modules/app/default.nix
