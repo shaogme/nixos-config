@@ -25,7 +25,10 @@ jobs:
             download-buffer-size = 1073741824
     
       - name: Update flake.lock
-        run: nix flake update --accept-flake-config
+        run: |
+          nix flake update --accept-flake-config
+          nix flake update --accept-flake-config ./vps/tohu
+          nix flake update --accept-flake-config ./vps/hyperv
 
       - name: Create Pull Request
         id: cpr

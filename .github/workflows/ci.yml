@@ -33,11 +33,14 @@ jobs:
 
       - name: Build System Toplevel
         # 这一步只编译不运行，确保语法和依赖没问题
-        run: nix build --accept-flake-config .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+        run: nix build --accept-flake-config ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
 
   # 任务 2: 动态虚拟机测试 (运行 QEMU 验证服务启动)
   integration-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host: [tohu, hyperv]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,9 +64,9 @@ jobs:
           ls -la /dev/kvm
 
       - name: Run NixOS Integration Tests
-        # 运行 flake.nix 中定义的 checks
+        # 运行 Host Flake 中定义的 inline vmTest
         # --print-build-logs 非常重要，如果测试挂了，你能看到 Python 脚本的报错输出
-        run: nix flake check --accept-flake-config --print-build-logs
+        run: nix build -L --accept-flake-config --print-build-logs ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.vmTest
 
   # 任务 3: 聚合测试结果 (用于 Branch Protection Rule)
   ci-success:

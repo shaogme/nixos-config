@@ -25,6 +25,9 @@ jobs:
           extra_nix_config: |
             download-buffer-size = 1073741824
 
+      - name: Build Disko Images
+        run: nix build --accept-flake-config ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
+
       - name: Prepare and Compress Image
         run: |
           cp result/*.raw main.raw
