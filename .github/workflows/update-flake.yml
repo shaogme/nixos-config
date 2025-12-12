@@ -2,8 +2,8 @@ name: Update Flake Lock
 
 on:
   schedule:
-    # 每天 UTC 0点 (北京时间早上8点)
-    - cron: '0 0 * * *'
+    # 北京时间凌晨 3:40 (UTC 19:40)
+    - cron: '40 19 * * *'
   workflow_dispatch: # 允许手动触发
 
 permissions:
