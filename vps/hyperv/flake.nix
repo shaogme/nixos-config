@@ -76,6 +76,10 @@
                     commonConfig
                 ];
 
+                # node.pkgs 已包含 overlay，禁止模块再次设置
+                nixpkgs.overlays = lib.mkForce [];
+                nixpkgs.hostPlatform = "x86_64-linux";
+                
                 networking.hostName = "hyperv-test";
             };
             testScript = ''
