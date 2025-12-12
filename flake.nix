@@ -31,9 +31,23 @@
         _module.args.inputs = inputs;
       };
       
-      # 2. 细分导出 - 内核优化模块（需单独导入以避免 chaotic 模块冲突）
-      kernel-cachyos = ./modules/kernel/cachyos.nix;
-      kernel-cachyos-unstable = ./modules/kernel/cachyos-unstable.nix;
+      # 2. 细分导出 - 内核优化模块（闭包包装以解决 inputs 在 imports 中的无限递归问题）
+      kernel-cachyos = {
+        imports = [
+          chaotic.nixosModules.nyx-cache
+          chaotic.nixosModules.nyx-overlay
+          chaotic.nixosModules.nyx-registry
+          ./modules/kernel/cachyos.nix
+        ];
+        _module.args.inputs = inputs;
+      };
+      kernel-cachyos-unstable = {
+        imports = [
+          chaotic.nixosModules.default
+          ./modules/kernel/cachyos-unstable.nix
+        ];
+        _module.args.inputs = inputs;
+      };
       kernel-xanmod = ./modules/kernel/xanmod.nix;
     };
   };

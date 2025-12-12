@@ -1,13 +1,8 @@
-# 使用此模块需要 nixos-unstable
-{ lib, config, pkgs, inputs, ... }:
+{ lib, config, pkgs, ... }:
 with lib;
 let
   cfg = config.my.kernel.cachyos-unstable;
 in {
-  imports = [
-    inputs.chaotic.nixosModules.default
-  ];
-
   options.my.kernel.cachyos-unstable = {
     enable = mkOption {
       type = types.bool;

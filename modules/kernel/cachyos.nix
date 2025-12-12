@@ -1,13 +1,8 @@
-{ lib, config, pkgs, inputs, ... }:
+{ lib, config, pkgs, ... }:
 with lib;
 let
   cfg = config.my.kernel.cachyos;
 in {
-  imports = [
-    inputs.chaotic.nixosModules.nyx-cache
-    inputs.chaotic.nixosModules.nyx-overlay
-    inputs.chaotic.nixosModules.nyx-registry
-  ];
   options.my.kernel.cachyos = {
     enable = mkOption {
       type = types.bool;
