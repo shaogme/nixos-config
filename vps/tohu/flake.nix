@@ -87,7 +87,7 @@
         })
         
         # 4. 内联测试模块
-        # 使用 nixosTest 而非 runNixOSTest，因为后者会将 nixpkgs.* 设为只读
+        # 使用 testers.nixosTest 而非 runtesters.nixosTest，因为后者会将 nixpkgs.* 设为只读
         ({ config, pkgs, ... }: 
         let
           # 构建带 chaotic overlay 的 pkgs
@@ -97,7 +97,7 @@
             overlays = [ my-lib.inputs.chaotic.overlays.default ];
           };
         in {
-          system.build.vmTest = pkgs.nixosTest {
+          system.build.vmTest = pkgs.testers.nixosTest {
             name = "tohu-inline-test";
             
             nodes.machine = { config, lib, ... }: {
@@ -106,7 +106,7 @@
                     commonConfig
                 ];
                 
-                # nixosTest 允许设置 nixpkgs.pkgs
+                # testers.nixosTest 允许设置 nixpkgs.pkgs
                 nixpkgs.pkgs = testPkgs;
                 
                 _module.args.inputs = my-lib.inputs;

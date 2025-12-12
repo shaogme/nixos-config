@@ -65,7 +65,7 @@
         })
         
         # 4. 内联测试模块 (XanMod 不需要 chaotic overlay)
-        # 使用 nixosTest 而非 runNixOSTest，因为后者会将 nixpkgs.* 设为只读
+        # 使用 testers.nixosTest 而非 runtesters.nixosTest，因为后者会将 nixpkgs.* 设为只读
         ({ config, pkgs, ... }: 
         let
           testPkgs = import my-lib.inputs.nixpkgs {
@@ -73,7 +73,7 @@
             config.allowUnfree = true;
           };
         in {
-          system.build.vmTest = pkgs.nixosTest {
+          system.build.vmTest = pkgs.testers.nixosTest {
             name = "hyperv-inline-test";
             
             nodes.machine = { config, lib, ... }: {
@@ -81,6 +81,12 @@
                     my-lib.nixosModules.default 
                     commonConfig
                 ];
+                
+                # testers.nixosTest 允许设置 nixpkgs.pkgs
+                nixpkgs.pkgs = testPkgs;
+                
+                _module.args.inputs = my-lib.inputs;
+                _module.args.isImportChaotic = false;
                 
                 networking.hostName = "hyperv-test";
             };
