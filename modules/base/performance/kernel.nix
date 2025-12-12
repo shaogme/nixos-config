@@ -1,10 +1,10 @@
-{ lib, config, pkgs, inputs, isTest ? false, ... }:
+{ lib, config, pkgs, inputs, isImportChaotic ? false, ... }:
 with lib;
 let
   cfg = config.my.performance.kernel;
 in {
   # 测试环境 (isTest=true) 不导入 chaotic 模块，避免与 runNixOSTest 只读设置冲突
-  imports = lib.optional (!isTest) inputs.chaotic.nixosModules.default;
+  imports = lib.optional (!isImportChaotic) inputs.chaotic.nixosModules.default;
 
   options.my.performance.kernel = {
     mode = mkOption {
