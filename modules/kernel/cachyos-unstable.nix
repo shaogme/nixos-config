@@ -12,6 +12,11 @@ in {
   };
 
   config = mkIf cfg.enable {
+    nix.settings = {
+      extra-substituters = [ "https://nyx.chaotic.cx" "https://chaotic-nyx.cachix.org" ];
+      extra-trusted-public-keys = [ "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8=" ];
+    };
+
     boot.kernelPackages = pkgs.linuxPackages_cachyos;
 
     # scx_rustland旨在将交互式工作负载优先于后台CPU密集型工作负载
