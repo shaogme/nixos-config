@@ -86,6 +86,7 @@
                 # testers.nixosTest 允许设置 nixpkgs.pkgs
                 nixpkgs.pkgs = testPkgs;
                 
+                # testers.nixosTest 不支持 specialArgs，需要在这里注入 inputs
                 _module.args.inputs = my-lib.inputs;
                 
                 networking.hostName = "hyperv-test";

@@ -27,8 +27,7 @@
           ./modules/hardware/default.nix
         ];
         
-        # 将 inputs 注入到模块系统中，方便子模块使用
-        _module.args.inputs = inputs;
+
       };
       
       # 2. 细分导出 - 内核优化模块（闭包包装以解决 inputs 在 imports 中的无限递归问题）
@@ -39,14 +38,12 @@
           chaotic.nixosModules.nyx-registry
           ./modules/kernel/cachyos.nix
         ];
-        _module.args.inputs = inputs;
       };
       kernel-cachyos-unstable = {
         imports = [
           chaotic.nixosModules.default
           ./modules/kernel/cachyos-unstable.nix
         ];
-        _module.args.inputs = inputs;
       };
       kernel-xanmod = ./modules/kernel/xanmod.nix;
     };
