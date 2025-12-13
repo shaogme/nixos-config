@@ -11,7 +11,7 @@
 ```
 nixos-config/
 ├── flake.nix              # 模块库入口
-├── modules/               # 可复用模块
+├── core/               # 可复用模块
 └── vps/                   # 主机配置目录
     ├── tohu/              # 示例主机 1
     │   ├── flake.nix      # 主机配置 (独立 flake)

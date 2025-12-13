@@ -74,7 +74,7 @@ nixos-config/
 
 ## 模块功能详解
 
-### 📦 `modules/base/` - 基础系统模块
+### 📦 `core/base/` - 基础系统模块
 
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
@@ -90,7 +90,7 @@ nixos-config/
 - `memory.nix` - 内存优化 (zram, earlyoom)
 - `performance/tuning.nix` - 性能调优
 
-### 📦 `modules/hardware/` - 硬件配置模块
+### 📦 `core/hardware/` - 硬件配置模块
 
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
@@ -106,7 +106,7 @@ nixos-config/
 - 可选 Swap 分区
 - Btrfs 根分区 (带子卷: `@`, `@home`, `@nix`, `@log`)
 
-### 📦 `modules/app/` - 应用服务模块
+### 📦 `core/app/` - 应用服务模块
 
 | 选项 | 描述 |
 |------|------|
@@ -114,7 +114,7 @@ nixos-config/
 | `core.app.web.alist` | Alist 文件列表服务 |
 | `core.app.web.x-ui-yg` | X-UI-YG 代理面板 |
 
-### 📦 `modules/kernel/` - 内核优化模块
+### 📦 `core/kernel/` - 内核优化模块
 
 | 模块 | 描述 |
 |------|------|
@@ -225,7 +225,7 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
   in {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      modules = [
+      core = [
         lib-core.nixosModules.default
         lib-core.nixosModules.kernel-xanmod
         commonConfig

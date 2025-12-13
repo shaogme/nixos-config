@@ -20,12 +20,12 @@
           nixos-facter-modules.nixosModules.facter
           disko.nixosModules.disko
           
-          ./modules/app/default.nix
-          ./modules/base/default.nix
-          ./modules/hardware/default.nix
+          ./core/app/default.nix
+          ./core/base/default.nix
+          ./core/hardware/default.nix
         ];
       };
-      kernel-xanmod = ./modules/kernel/xanmod.nix;
+      kernel-xanmod = ./core/kernel/xanmod.nix;
     };
   };
 }
