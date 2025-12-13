@@ -61,7 +61,7 @@
     "home-manager": {
       "inputs": {
         "nixpkgs": [
-          "my-lib",
+          "kernel-cachyos-unstable",
           "chaotic",
           "nixpkgs"
         ]
@@ -84,7 +84,7 @@
       "inputs": {
         "nix-github-actions": "nix-github-actions",
         "nixpkgs": [
-          "my-lib",
+          "kernel-cachyos-unstable",
           "chaotic",
           "nixpkgs"
         ]
@@ -103,9 +103,25 @@
         "type": "github"
       }
     },
-    "my-lib": {
+    "kernel-cachyos-unstable": {
       "inputs": {
         "chaotic": "chaotic",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../../extra/kernel/cachyos-unstable",
+        "type": "path"
+      },
+      "original": {
+        "path": "../../extra/kernel/cachyos-unstable",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "my-lib": {
+      "inputs": {
         "disko": "disko",
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": [
@@ -125,7 +141,7 @@
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
-          "my-lib",
+          "kernel-cachyos-unstable",
           "chaotic",
           "jovian",
           "nixpkgs"
@@ -179,11 +195,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1765536405,
-        "narHash": "sha256-HTHfcqG8WsrJG0aW3edXF5nQJK3VjPWcUTEi/r0LV7o=",
+        "lastModified": 1765611431,
+        "narHash": "sha256-IRV8mWrHjhCkusB2X8oNPARfvJV95GJWapKX977fqUE=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "27225de9f2030213246e0d8d62957c43d5229368",
+        "rev": "fb812c98a7c867a8389d165c2bed5d7a08a41478",
         "type": "github"
       },
       "original": {
@@ -195,6 +211,7 @@
     },
     "root": {
       "inputs": {
+        "kernel-cachyos-unstable": "kernel-cachyos-unstable",
         "my-lib": "my-lib",
         "nixpkgs": "nixpkgs_2"
       }
@@ -202,7 +219,7 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
-          "my-lib",
+          "kernel-cachyos-unstable",
           "chaotic",
           "nixpkgs"
         ]
