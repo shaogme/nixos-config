@@ -37,6 +37,9 @@ jobs:
           name: chaotic-nyx
           skipPush: true
 
+      - name: Update flake.lock
+        uses: ./.github/actions/update-locks
+
       - name: Build System Toplevel
         # 这一步只编译不运行，确保语法和依赖没问题
         run: nix build ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel

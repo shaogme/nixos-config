@@ -1,0 +1,14 @@
+name: Update Flake Locks
+description: Update all flake.lock files in the repository
+
+runs:
+  using: composite
+  steps:
+    - name: Update all flake.lock files
+      shell: bash
+      run: |
+        nix flake update
+        nix flake update --flake ./vps/tohu
+        nix flake update --flake ./vps/hyperv
+        nix flake update --flake ./modules/kernel/cachyos
+        nix flake update --flake ./modules/kernel/cachyos-unstable

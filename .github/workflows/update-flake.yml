@@ -31,12 +31,7 @@ jobs:
           skipPush: true
     
       - name: Update flake.lock
-        run: |
-          nix flake update
-          nix flake update --flake ./vps/tohu
-          nix flake update --flake ./vps/hyperv
-          nix flake update --flake ./modules/kernel/cachyos
-          nix flake update --flake ./modules/kernel/cachyos-unstable
+        uses: ./.github/actions/update-locks
 
       - name: Create Pull Request
         id: cpr
