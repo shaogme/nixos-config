@@ -17,8 +17,8 @@
     # 注意：chaotic 不在这里！它被隔离到 kernel 分区中
   };
 
-  outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+  outputs = inputs@{ self, flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } ({ config, ... }: {
       # 导入 partitions 支持
       imports = [
         flake-parts.flakeModules.partitions
@@ -36,12 +36,6 @@
         module.imports = [ ./modules/kernel/flake-module.nix ];
       };
 
-      # 指定哪些 flake 输出来自分区
-      partitionedAttrs = {
-        # kernel 分区的 nixosModules 将被合并到主 flake
-        # 注意：这里需要让分区定义特定的模块，而非覆盖整个 nixosModules
-      };
-
       # === 主要 Flake 输出 ===
       flake = {
         # 核心 NixOS 模块（不需要 chaotic）
@@ -57,7 +51,12 @@
               ./modules/hardware/default.nix
             ];
           };
-        };
+          
+          # Xanmod 内核（无需 chaotic）
+          kernel-xanmod = ./modules/kernel/xanmod.nix;
+        } 
+        # 合并 kernel 分区的模块
+        // config.partitions.kernel.module.flake.nixosModules;
       };
-    };
+    });
 }

@@ -1,5 +1,5 @@
 # Kernel 分区的 flake-parts 模块
-# 定义 kernel-cachyos 和 kernel-cachyos-unstable NixOS 模块
+# 定义需要 chaotic 依赖的 kernel NixOS 模块
 { inputs, ... }:
 
 {
@@ -24,8 +24,7 @@
         ./cachyos-unstable/default.nix
       ];
     };
-
-    # Xanmod 内核（无需 chaotic）
-    kernel-xanmod = ./xanmod.nix;
+    
+    # 注意: kernel-xanmod 不需要 chaotic，直接在主 flake 中定义
   };
 }
