@@ -75,6 +75,7 @@
         in {
           system.build.vmTest = pkgs.testers.nixosTest {
             name = "hyperv-inline-test";
+            specialArgs = { inputs = my-lib.inputs; };
             
             nodes.machine = { config, lib, ... }: {
                 imports = [ 
@@ -85,8 +86,6 @@
                 
                 # testers.nixosTest 允许设置 nixpkgs.pkgs
                 nixpkgs.pkgs = testPkgs;
-                
-                _module.args.inputs = my-lib.inputs;
                 
                 networking.hostName = "hyperv-test";
             };
