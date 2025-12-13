@@ -244,7 +244,6 @@ let
 in {
   system.build.vmTest = pkgs.testers.nixosTest {
     name = "<新主机名>-inline-test";
-    specialArgs = { inputs = my-lib.inputs; };
     
     nodes.machine = { config, lib, ... }: {
       imports = [ 
@@ -254,6 +253,8 @@ in {
       ];
       
       nixpkgs.pkgs = testPkgs;
+      # testers.nixosTest 不支持 specialArgs，需要在这里注入 inputs
+      _module.args.inputs = my-lib.inputs;
       networking.hostName = "<新主机名>-test";
     };
     
