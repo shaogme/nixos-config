@@ -26,18 +26,17 @@
         ];
       };
       
-      # 2. 细分导出 - 内核优化模块（通过子 Flake 独立管理）
-      # [黑魔法] builtins.getFlake 在模块函数内部调用，延迟评估
-      # ${./path} 将目录放入 Nix Store，保证纯净性
-      # 子 Flake 拥有独立的 flake.lock，与根目录完全隔离
+      # 2. 细分导出 - 内核优化模块（通过独立 Git 仓库管理）
+      # 使用 builtins.getFlake 引用外部仓库，实现依赖隔离
+      # chaotic 依赖完全隔离在 nixos-config-extra 仓库中
       kernel-cachyos = { ... }: {
         imports = [
-          (builtins.getFlake "${./modules/kernel/cachyos}").nixosModules.default
+          (builtins.getFlake "github:ShaoG-R/nixos-config-extra?dir=kernel/cachyos").nixosModules.default
         ];
       };
       kernel-cachyos-unstable = { ... }: {
         imports = [
-          (builtins.getFlake "${./modules/kernel/cachyos-unstable}").nixosModules.default
+          (builtins.getFlake "github:ShaoG-R/nixos-config-extra?dir=kernel/cachyos-unstable").nixosModules.default
         ];
       };
       kernel-xanmod = ./modules/kernel/xanmod.nix;
