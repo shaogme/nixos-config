@@ -194,11 +194,11 @@
       },
       "locked": {
         "dir": "extra/kernel/cachyos",
-        "lastModified": 1765720276,
-        "narHash": "sha256-27cpCx9SEObh57XP2NaFwo0g1dlZkvuOMzmYI60hcFM=",
+        "lastModified": 1765720334,
+        "narHash": "sha256-OLaR8pGy3pJBtmV0VZXmX/hC7pfTmm2NlJk1Ry2U3KY=",
         "owner": "ShaoG-R",
         "repo": "nixos-config",
-        "rev": "bd4483f79c692213065b28211d23a97ac1dc7e25",
+        "rev": "4b58666762e35ca7bac2c9c9d6fb182c1987e0de",
         "type": "github"
       },
       "original": {
@@ -218,11 +218,11 @@
       },
       "locked": {
         "dir": "extra/kernel/cachyos-unstable",
-        "lastModified": 1765720276,
-        "narHash": "sha256-27cpCx9SEObh57XP2NaFwo0g1dlZkvuOMzmYI60hcFM=",
+        "lastModified": 1765720334,
+        "narHash": "sha256-OLaR8pGy3pJBtmV0VZXmX/hC7pfTmm2NlJk1Ry2U3KY=",
         "owner": "ShaoG-R",
         "repo": "nixos-config",
-        "rev": "bd4483f79c692213065b28211d23a97ac1dc7e25",
+        "rev": "4b58666762e35ca7bac2c9c9d6fb182c1987e0de",
         "type": "github"
       },
       "original": {
