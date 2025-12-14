@@ -51,5 +51,8 @@ in {
 
     # --- 图形界面 (X11) ---
     services.xserver.enable = false; # VPS 不需要图形界面
+
+    # --- Firewall ---
+    networking.nftables.enable = true;
   };
 }

@@ -73,8 +73,37 @@
                 domain = "x-ui.tohu.shaog.uk";
                 backend = "podman";
             };
-            
-            
+
+            core.app.hysteria = {
+              enable = true;
+              backend = "podman";
+              portHopping = {
+                enable = true;
+                range = "20000-50000";
+                interface = "eth0"; # Assuming eth0 based on common patterns, user can adjust if needed
+              };
+              settings = {
+                listen = ":20000";
+                acme = {
+                  domains = [ "tohu.hy.shaog.uk" ];
+                  email = "shaog@duck.com";
+                };
+                bandwidth = {
+                  up = "512 mbps";
+                  down = "512 mbps";
+                };
+                auth = {
+                  type = "password";
+                  password = ""; # Placeholder for auto-generation/user setting
+                };
+                outbounds = [
+                  {
+                    name = "default";
+                    type = "direct";
+                  }
+                ];
+              };
+            };
             core.hardware.network.single-interface = {
                 enable = true;
                 ipv4 = {
