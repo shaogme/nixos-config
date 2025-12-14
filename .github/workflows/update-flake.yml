@@ -5,6 +5,7 @@ on:
     # 北京时间凌晨 3:40 (UTC 19:40)
     - cron: '40 19 * * *'
   workflow_dispatch: # 允许手动触发
+  workflow_call: # 允许被其他工作流调用
 
 permissions:
   contents: write

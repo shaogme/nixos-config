@@ -15,9 +15,32 @@ concurrency:
 
 jobs:
   # ============================================================
+  # 任务 0: 检查是否应该运行 (过滤自动更新提交)
+  # ============================================================
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if triggered by auto-update
+        id: check
+        run: |
+          # 检查 commit message 是否是自动更新产生的
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          if [[ "$COMMIT_MESSAGE" == *"chore: update flake.lock"* ]]; then
+            echo "Skipping: triggered by auto-update commit"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "Running: normal commit"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================
   # 任务 1: 更新 VPS Hosts 的 lock 文件
   # ============================================================
   update-vps-locks:
+    needs: should-run
+    if: needs.should-run.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -138,7 +161,7 @@ jobs:
           nix build -L --print-build-logs ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.vmTest
 
   # ============================================================
-  # 任务 4: 聚合测试结果 (用于 Branch Protection Rule)
+  # 任务 4: 聚合测试结果
   # ============================================================
   ci-success:
     needs: 
@@ -146,11 +169,28 @@ jobs:
       - vm-tests
     runs-on: ubuntu-latest
     if: always()
+    outputs:
+      success: ${{ steps.check.outputs.success }}
     steps:
       - name: Check Status
+        id: check
         run: |
           if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
             echo "One or more jobs failed or were cancelled."
+            echo "success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
           echo "All VPS hosts tests passed."
+          echo "success=true" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # 任务 5: 触发 flake.lock 更新 (仅在测试成功时)
+  # ============================================================
+  trigger-update-flake:
+    needs: 
+      - should-run
+      - ci-success
+    if: needs.should-run.outputs.should_run == 'true' && needs.ci-success.outputs.success == 'true'
+    uses: ./.github/workflows/update-flake.yml
+    secrets: inherit
+

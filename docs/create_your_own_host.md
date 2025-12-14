@@ -6,22 +6,31 @@
 
 ## 架构概述
 
-本仓库采用 **模块库 + 独立主机配置** 的分离架构：
+本仓库采用 **Core + Extra + 独立主机配置** 的分层架构：
 
 ```
 nixos-config/
-├── flake.nix              # 模块库入口
-├── core/               # 可复用模块
-└── vps/                   # 主机配置目录
-    ├── tohu/              # 示例主机 1
-    │   ├── flake.nix      # 主机配置 (独立 flake)
-    │   └── facter.json    # 硬件探测报告
-    └── hyperv/            # 示例主机 2
+├── flake.nix              # 聚合入口 (整合 core + extra，提供 VM 测试)
+├── core/                  # 📦 核心模块库
+│   ├── flake.nix          # Core 入口
+│   ├── app/               # 应用服务
+│   ├── base/              # 基础系统
+│   ├── hardware/          # 硬件配置
+│   └── kernel/            # XanMod 内核
+├── extra/                 # 🧪 扩展模块
+│   └── kernel/
+│       ├── cachyos/           # CachyOS 稳定内核
+│       └── cachyos-unstable/  # CachyOS 不稳定内核
+└── vps/                   # 🖥️ 主机配置目录
+    ├── tohu/              # 示例主机 1 (使用 CachyOS)
+    │   ├── flake.nix
+    │   └── facter.json
+    └── hyperv/            # 示例主机 2 (使用 XanMod)
         ├── flake.nix
         └── facter.json
 ```
 
-每个主机都是一个**独立的 Flake**，通过 `lib-core.url = "path:../../"` 引用模块库。
+每个主机都是一个**独立的 Flake**，通过 GitHub URL 引用 `core` 和 `extra` 模块。
 
 ---
 
@@ -70,9 +79,21 @@ cp ../hyperv/flake.nix ./flake.nix
 cp ../tohu/flake.nix ./flake.nix
 ```
 
-### 第三步：编辑主机配置
+### 第三步：选择内核
 
-打开 `flake.nix`，根据以下模板进行配置：
+根据需求选择内核模块：
+
+| 内核 | 引用方式 | 适用场景 | 需要额外 overlay |
+|------|----------|---------|-----------------|
+| XanMod | `lib-core.nixosModules.kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
+| CachyOS | 单独引入 `extra/kernel/cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
+| CachyOS Unstable | 单独引入 `extra/kernel/cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
+
+### 第四步：编辑主机配置
+
+根据所选内核，参考以下模板进行配置：
+
+#### 使用 XanMod 内核 (推荐新手)
 
 ```nix
 {
@@ -80,13 +101,12 @@ cp ../tohu/flake.nix ./flake.nix
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "path:../../";
+    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, lib-core, ... }: 
   let
-    # 通用配置 (用于实际部署和测试)
     commonConfig = { config, pkgs, ... }: {
       system.stateVersion = "25.11"; 
       core.base.enable = true;
@@ -109,10 +129,7 @@ cp ../tohu/flake.nix ./flake.nix
       # ========== 自动更新配置 ==========
       core.base.update = {
         enable = true;
-        allowReboot = true;       # 更新后自动重启
-        # flakeUri 默认使用 github:ShaoG-R/nixos-config?dir=vps/${hostName}
-        # 如需自定义，取消下行注释:
-        # flakeUri = "github:<你的用户名>/nixos-config?dir=vps/<主机名>";
+        allowReboot = true;
       };
     };
   in
@@ -123,7 +140,7 @@ cp ../tohu/flake.nix ./flake.nix
       modules = [
         # 1. 引入模块库
         lib-core.nixosModules.default
-        lib-core.nixosModules.kernel-xanmod  # 或 kernel-cachyos / kernel-cachyos-unstable
+        lib-core.nixosModules.kernel-xanmod
         
         # 2. 通用配置
         commonConfig
@@ -133,49 +150,135 @@ cp ../tohu/flake.nix ./flake.nix
           networking.hostName = "<新主机名>";
           facter.reportPath = ./facter.json;
           
-          # ========== 网络配置 ==========
-          # DHCP 模式:
+          # 网络配置 (DHCP)
           core.hardware.network.single-interface = {
             enable = true;
             dhcp.enable = true;
           };
           
-          # 静态 IP 模式 (取消注释并配置):
-          # core.hardware.network.single-interface = {
-          #   enable = true;
-          #   ipv4 = {
-          #     enable = true;
-          #     address = "192.168.1.100";
-          #     prefixLength = 24;
-          #     gateway = "192.168.1.1";
-          #   };
-          # };
-          
-          # ========== 认证配置 ==========
+          # 认证配置
           core.auth.root = {
-            mode = "default";  # "default" (仅密钥) 或 "permit_passwd" (允许密码)
-            initialHashedPassword = "$6$...";  # 密码 Hash (见下方生成方法)
-            authorizedKeys = [ 
-              "ssh-ed25519 AAAA..." 
-            ];
+            mode = "default";
+            authorizedKeys = [ "ssh-ed25519 AAAA..." ];
           };
-          
-          # ========== 应用服务 (可选) ==========
-          # core.app.web.alist = {
-          #   enable = true;
-          #   domain = "alist.example.com";
-          #   backend = "podman";
-          # };
         })
         
-        # 4. 内联测试模块 (可选，见下方)
+        # 4. 内联测试模块 (见下方)
       ];
     };
   };
 }
 ```
 
-### 第四步：配置认证
+#### 使用 CachyOS 内核
+
+```nix
+{
+  description = "<新主机名> Configuration";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
+    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.inputs.nixpkgs.follows = "nixpkgs";
+    
+    # CachyOS 内核 (选择稳定版或不稳定版)
+    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    cachyos.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs = { self, nixpkgs, lib-core, cachyos, ... }: 
+  let
+    system = "x86_64-linux";
+    
+    # 使用 cachyos flake 提供的 testPkgs 构建函数
+    testPkgs = cachyos.lib.makeTestPkgs system;
+    
+    commonConfig = { config, pkgs, ... }: {
+      system.stateVersion = "25.11"; 
+      core.base.enable = true;
+      
+      core.hardware.type = "vps";
+      core.hardware.disk = {
+        enable = true;
+        swapSize = 2048;
+      };
+      
+      core.performance.tuning.enable = true;
+      core.memory.mode = "aggressive";
+      core.container.podman.enable = true;
+      
+      core.base.update = {
+        enable = true;
+        allowReboot = true;
+      };
+    };
+  in
+  {
+    nixosConfigurations.<新主机名> = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inputs = lib-core.inputs; };
+      modules = [
+        # 1. 引入模块库
+        lib-core.nixosModules.default
+        cachyos.nixosModules.default  # CachyOS 内核
+        
+        # 2. 通用配置
+        commonConfig
+        
+        # 3. 主机特有配置
+        ({ config, pkgs, ... }: {
+          networking.hostName = "<新主机名>";
+          facter.reportPath = ./facter.json;
+          
+          # 网络配置 (静态 IP 示例)
+          core.hardware.network.single-interface = {
+            enable = true;
+            ipv4 = {
+              enable = true;
+              address = "192.168.1.100";
+              prefixLength = 24;
+              gateway = "192.168.1.1";
+            };
+          };
+          
+          # 认证配置
+          core.auth.root = {
+            mode = "default";
+            authorizedKeys = [ "ssh-ed25519 AAAA..." ];
+          };
+        })
+        
+        # 4. 内联测试模块 (使用 cachyos testPkgs)
+        ({ config, pkgs, ... }: {
+          system.build.vmTest = pkgs.testers.nixosTest {
+            name = "<新主机名>-inline-test";
+            
+            nodes.machine = { config, lib, ... }: {
+              imports = [ 
+                lib-core.nixosModules.default 
+                cachyos.nixosModules.default
+                commonConfig
+              ];
+              
+              nixpkgs.pkgs = testPkgs;
+              _module.args.inputs = lib-core.inputs;
+              networking.hostName = "<新主机名>-test";
+            };
+            
+            testScript = ''
+              start_all()
+              machine.wait_for_unit("multi-user.target")
+              machine.wait_for_unit("podman.socket")
+            '';
+          };
+        })
+      ];
+    };
+  };
+}
+```
+
+### 第五步：配置认证
 
 #### 生成密码 Hash
 
@@ -201,7 +304,7 @@ cat ~/.ssh/id_ed25519.pub
 | `default` | ❌ 禁止 | ✅ 允许 | 推荐，更安全 |
 | `permit_passwd` | ✅ 允许 | ✅ 允许 | 密码登录，方便但不安全 |
 
-### 第五步：生成硬件报告
+### 第六步：生成硬件报告
 
 在目标机器上运行 `nixos-facter` 生成硬件探测报告：
 
@@ -215,31 +318,20 @@ ssh root@<TARGET_IP> "nix run --extra-experimental-features 'nix-command flakes'
 
 将 `facter.json` 保存到主机目录 (`vps/<新主机名>/facter.json`)。
 
-### 第六步：选择内核
-
-根据需求选择内核模块：
-
-| 模块 | 适用场景 | 需要额外 overlay |
-|------|---------|-----------------|
-| `kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
-| `kernel-cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
-| `kernel-cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
-
 ---
 
-## 添加内联测试 (可选)
+## 添加内联测试
 
-为了验证配置正确性，可以添加内联 VM 测试：
+为了验证配置正确性，建议添加内联 VM 测试。
+
+### XanMod 内核测试模块
 
 ```nix
-# 在 modules 列表末尾添加
 ({ config, pkgs, ... }: 
 let
   testPkgs = import lib-core.inputs.nixpkgs {
     system = "x86_64-linux";
     config.allowUnfree = true;
-    # 如果使用 cachyos 内核，需要添加 overlay:
-    # overlays = [ lib-core.inputs.chaotic.overlays.default ];
   };
 in {
   system.build.vmTest = pkgs.testers.nixosTest {
@@ -253,7 +345,6 @@ in {
       ];
       
       nixpkgs.pkgs = testPkgs;
-      # testers.nixosTest 不支持 specialArgs，需要在这里注入 inputs
       _module.args.inputs = lib-core.inputs;
       networking.hostName = "<新主机名>-test";
     };
@@ -267,7 +358,39 @@ in {
 })
 ```
 
-运行测试:
+### CachyOS 内核测试模块
+
+CachyOS 需要使用带有 chaotic overlay 的 testPkgs:
+
+```nix
+({ config, pkgs, ... }: {
+  system.build.vmTest = pkgs.testers.nixosTest {
+    name = "<新主机名>-inline-test";
+    
+    nodes.machine = { config, lib, ... }: {
+      imports = [ 
+        lib-core.nixosModules.default 
+        cachyos.nixosModules.default
+        commonConfig
+      ];
+      
+      # 使用 cachyos flake 提供的 testPkgs
+      nixpkgs.pkgs = testPkgs;
+      _module.args.inputs = lib-core.inputs;
+      networking.hostName = "<新主机名>-test";
+    };
+    
+    testScript = ''
+      start_all()
+      machine.wait_for_unit("multi-user.target")
+      machine.wait_for_unit("podman.socket")
+    '';
+  };
+})
+```
+
+### 运行测试
+
 ```bash
 nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
 ```
@@ -282,14 +405,24 @@ nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
 git checkout -b add-host-<新主机名>
 ```
 
-### 2. 提交更改
+### 2. 更新 CI 配置
+
+在 `.github/workflows/vps-hosts-ci.yml` 中的 matrix 添加新主机:
+
+```yaml
+matrix:
+  host: [hyperv, tohu, <新主机名>]
+```
+
+### 3. 提交更改
 
 ```bash
 git add vps/<新主机名>/
+git add .github/workflows/vps-hosts-ci.yml
 git commit -m "Add new host: <新主机名>"
 ```
 
-### 3. 推送并创建 PR
+### 4. 推送并创建 PR
 
 ```bash
 git push -u origin add-host-<新主机名>
@@ -297,11 +430,12 @@ git push -u origin add-host-<新主机名>
 
 在 GitHub 上创建 Pull Request 合并到 `main` 分支。
 
-### 4. 等待 CI 检查
+### 5. 等待 CI 检查
 
-- CI 会自动运行配置检查
+- `ci.yml` 会自动运行 flake 检查和三种内核的 VM 测试
 - 检查通过后合并 PR
-- 合并后可触发镜像构建
+- 合并后 `vps-hosts-ci.yml` 会自动运行新主机的测试
+- 测试成功后会自动触发 `update-flake.yml` 更新依赖
 
 ---
 

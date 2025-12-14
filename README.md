@@ -13,20 +13,30 @@
 
 ## 架构设计
 
-本仓库采用 **库 + 主机配置** 分离的架构：
+本仓库采用 **Core + Extra** 分层架构：
 
 ```
 nixos-config/
-├── flake.nix              # 模块库入口 (导出 nixosModules)
-├── modules/               # 📦 可复用模块库
+├── flake.nix              # 🔗 聚合入口 (整合 core + extra)
+├── core/                  # 📦 核心模块库
+│   ├── flake.nix          # Core 模块入口
 │   ├── app/               # 应用服务模块 (nginx, alist, x-ui 等)
 │   ├── base/              # 基础系统模块 (SSH, 时区, 自动更新等)
 │   ├── hardware/          # 硬件配置模块 (磁盘分区, 网络等)
-│   └── kernel/            # 内核优化模块 (CachyOS, XanMod)
+│   └── kernel/            # XanMod 内核模块
+├── extra/                 # 🧪 扩展模块 (需要外部依赖)
+│   └── kernel/
+│       ├── cachyos/           # CachyOS 稳定内核 (需要 chaotic)
+│       │   ├── flake.nix
+│       │   ├── default.nix
+│       │   └── sysctl.nix
+│       └── cachyos-unstable/  # CachyOS 不稳定内核
+│           ├── flake.nix
+│           └── default.nix
 ├── vps/                   # 🖥️ 独立主机配置
 │   ├── tohu/              # tohu 主机 (独立 flake)
-│   │   ├── flake.nix      # 主机配置入口
-│   │   └── facter.json    # 硬件探测报告
+│   │   ├── flake.nix
+│   │   └── facter.json
 │   └── hyperv/            # hyperv 主机 (独立 flake)
 │       ├── flake.nix
 │       └── facter.json
@@ -35,34 +45,55 @@ nixos-config/
 
 ### 核心概念
 
-#### 1. 模块库 (`flake.nix`)
+#### 1. 根目录 Flake (`flake.nix`)
 
-根目录的 `flake.nix` 作为 **模块库入口**，导出以下模块：
+根目录 `flake.nix` 作为 **聚合入口**，整合 `core` 和 `extra` 模块：
 
 | 模块名 | 描述 |
 |--------|------|
-| `nixosModules.default` | 聚合入口，包含所有核心模块 (app + base + hardware) |
+| `nixosModules.default` | 核心模块 (app + base + hardware)，不含内核 |
+| `nixosModules.kernel-xanmod` | XanMod 内核 (无需额外 overlay) |
 | `nixosModules.kernel-cachyos` | CachyOS 稳定内核 + chaotic 缓存 |
 | `nixosModules.kernel-cachyos-unstable` | CachyOS 不稳定内核 + 完整 chaotic overlay |
-| `nixosModules.kernel-xanmod` | XanMod 稳定内核 (无需额外 overlay) |
+| `nixosModules.full-xanmod` | 完整预设: core + XanMod |
+| `nixosModules.full-cachyos` | 完整预设: core + CachyOS |
+| `nixosModules.full-cachyos-unstable` | 完整预设: core + CachyOS Unstable |
 
-#### 2. 主机配置 (`vps/<hostname>/flake.nix`)
+#### 2. CI 集成测试
 
-每个主机都有独立的 `flake.nix`，通过 `path:../../` 引用模块库：
+根目录 Flake 还提供三种内核配置的 VM 测试：
+
+```bash
+# 运行所有测试
+nix flake check
+
+# 运行单个内核测试
+nix build .#checks.x86_64-linux.kernel-xanmod
+nix build .#checks.x86_64-linux.kernel-cachyos
+nix build .#checks.x86_64-linux.kernel-cachyos-unstable
+```
+
+#### 3. 主机配置 (`vps/<hostname>/flake.nix`)
+
+每个主机都有独立的 `flake.nix`，通过 GitHub URL 引用模块库：
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "path:../../";  # 引用模块库
+    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
+    
+    # 如果使用 CachyOS 内核
+    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
   
-  outputs = { self, nixpkgs, lib-core, ... }: {
+  outputs = { self, nixpkgs, lib-core, cachyos, ... }: {
     nixosConfigurations.<hostname> = nixpkgs.lib.nixosSystem {
       modules = [
-        lib-core.nixosModules.default           # 引入核心模块
-        lib-core.nixosModules.kernel-<variant>  # 选择内核
+        lib-core.nixosModules.default       # 核心模块
+        cachyos.nixosModules.default        # CachyOS 内核
         # ... 主机特定配置
       ];
     };
@@ -114,13 +145,13 @@ nixos-config/
 | `core.app.web.alist` | Alist 文件列表服务 |
 | `core.app.web.x-ui-yg` | X-UI-YG 代理面板 |
 
-### 📦 `core/kernel/` - 内核优化模块
+### 📦 内核模块
 
-| 模块 | 描述 |
-|------|------|
-| `kernel-cachyos` | CachyOS 稳定版内核 + 性能优化补丁 |
-| `kernel-cachyos-unstable` | CachyOS 最新内核 + 完整 chaotic overlay |
-| `kernel-xanmod` | XanMod 稳定内核 (通用兼容性好) |
+| 模块 | 位置 | 描述 | 需要额外 overlay |
+|------|------|------|-----------------|
+| `kernel-xanmod` | `core/kernel/` | XanMod 稳定内核 (通用兼容性好) | ❌ |
+| `kernel-cachyos` | `extra/kernel/cachyos/` | CachyOS 稳定版内核 + 性能优化补丁 | ✅ chaotic |
+| `kernel-cachyos-unstable` | `extra/kernel/cachyos-unstable/` | CachyOS 最新内核 + 完整 chaotic overlay | ✅ chaotic |
 
 ---
 
@@ -139,6 +170,44 @@ core.auth.root = {
 生成密码 Hash:
 ```bash
 nix run nixpkgs#mkpasswd -- -m sha-512
+```
+
+---
+
+## CI/CD 工作流
+
+本仓库使用多个 GitHub Actions 工作流实现自动化：
+
+### 工作流概览
+
+| 工作流 | 触发条件 | 功能 |
+|--------|---------|------|
+| `ci.yml` | PR 到 main | 检查 core/extra flakes，运行三种内核的 VM 测试 |
+| `vps-hosts-ci.yml` | Push 到 main | 更新 VPS hosts lock，构建检查和 VM 测试，成功后触发 update-flake |
+| `update-flake.yml` | 每日定时 / 被调用 | 更新所有 flake.lock，创建 PR 并自动合并 |
+
+### 工作流链
+
+```mermaid
+flowchart TD
+    A[Push to main] --> B{commit message 包含<br/>'chore: update flake.lock'?}
+    B -->|是| C[跳过 - 防止死循环]
+    B -->|否| D[vps-hosts-ci.yml]
+    
+    D --> E[更新 VPS locks]
+    E --> F[构建检查]
+    E --> G[VM 测试]
+    F --> H{全部通过?}
+    G --> H
+    
+    H -->|是| I[update-flake.yml]
+    H -->|否| J[CI 失败]
+    
+    I --> K[更新所有 locks]
+    K --> L[创建 PR]
+    L --> M[自动合并]
+    M --> N["Push 'chore: update flake.lock'"]
+    N --> C
 ```
 
 ---
@@ -190,19 +259,26 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
 
 ## 示例主机配置
 
-以下是一个典型的 VPS 主机配置：
+以下是一个使用 CachyOS 内核的 VPS 主机配置：
 
 ```nix
 # vps/myhost/flake.nix
 {
+  description = "myhost Configuration";
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "path:../../";
+    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
+    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, lib-core, ... }: 
+  outputs = { self, nixpkgs, lib-core, cachyos, ... }: 
   let
+    system = "x86_64-linux";
+    testPkgs = cachyos.lib.makeTestPkgs system;
+    
     commonConfig = { config, pkgs, ... }: {
       system.stateVersion = "25.11";
       core.base.enable = true;
@@ -224,10 +300,11 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
     };
   in {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      core = [
+      inherit system;
+      specialArgs = { inputs = lib-core.inputs; };
+      modules = [
         lib-core.nixosModules.default
-        lib-core.nixosModules.kernel-xanmod
+        cachyos.nixosModules.default
         commonConfig
         ({ config, pkgs, ... }: {
           networking.hostName = "myhost";
@@ -241,6 +318,30 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
           core.auth.root = {
             mode = "default";
             authorizedKeys = [ "ssh-ed25519 AAAA..." ];
+          };
+        })
+        
+        # 内联测试模块
+        ({ config, pkgs, ... }: {
+          system.build.vmTest = pkgs.testers.nixosTest {
+            name = "myhost-inline-test";
+            
+            nodes.machine = { config, lib, ... }: {
+              imports = [ 
+                lib-core.nixosModules.default 
+                cachyos.nixosModules.default
+                commonConfig
+              ];
+              nixpkgs.pkgs = testPkgs;
+              _module.args.inputs = lib-core.inputs;
+              networking.hostName = "myhost-test";
+            };
+            
+            testScript = ''
+              start_all()
+              machine.wait_for_unit("multi-user.target")
+              machine.wait_for_unit("podman.socket")
+            '';
           };
         })
       ];
