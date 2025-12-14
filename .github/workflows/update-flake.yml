@@ -16,6 +16,9 @@ permissions:
 
 jobs:
   update-lockfile:
+    if: >-
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, 'chore: update flake.lock')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
