@@ -26,6 +26,17 @@
         # SSH Keys
         sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKoWKVpkKI/XjU9UPjdHwB7a1bVMUk0/me8iS2gGewkn ed25519 256-20251215 shaog@duck.com" ];
       };
+
+      ipv4 = {
+        address = "142.171.173.245";
+        prefixLength = 26;
+        gateway = "142.171.173.193";
+      };
+      ipv6 = {
+        address = "2607:f130:0:161::3c23:5d0d";
+        prefixLength = 64;
+        gateway = "2607:f130:0:161::1";
+      };
     };
     # ==========================================
     
@@ -131,7 +142,18 @@
 
             core.hardware.network.single-interface = {
                 enable = true;
-                dhcp.enable = true;
+                ipv4 = {
+                    enable = true;
+                    address = hostConfig.ipv4.address;
+                    prefixLength = hostConfig.ipv4.prefixLength;
+                    gateway = hostConfig.ipv4.gateway;
+                };
+                ipv6 = {
+                    enable = true;
+                    address = hostConfig.ipv6.address;
+                    prefixLength = hostConfig.ipv6.prefixLength;
+                    gateway = hostConfig.ipv6.gateway;
+                };
             };
             
             # Auth - 集中引用
