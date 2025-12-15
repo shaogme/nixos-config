@@ -3,9 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config/pre-release?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
-    cachyos.url = "github:ShaoG-R/nixos-config/pre-release?dir=extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 

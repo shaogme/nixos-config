@@ -9,10 +9,10 @@
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
     
     # Extra kernel modules
-    kernel-cachyos.url = "github:ShaoG-R/nixos-config/pre-release?dir=extra/kernel/cachyos";
+    kernel-cachyos.url = "path:./extra/kernel/cachyos";
     kernel-cachyos.inputs.nixpkgs.follows = "nixpkgs";
     
-    kernel-cachyos-unstable.url = "github:ShaoG-R/nixos-config/pre-release?dir=extra/kernel/cachyos-unstable";
+    kernel-cachyos-unstable.url = "path:./extra/kernel/cachyos-unstable";
     kernel-cachyos-unstable.inputs.nixpkgs.follows = "nixpkgs";
   };
 

@@ -5,23 +5,15 @@ on:
     # 北京时间凌晨 3:40 (UTC 19:40)
     - cron: '40 19 * * *'
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'docs/*'
 
 jobs:
   update-main:
-    if: "${{ github.event_name != 'push' || !contains(github.event.head_commit.message, 'chore: update flake.lock') }}"
     uses: ./.github/workflows/update-flake.yml
     with:
       branch: main
     secrets: inherit
 
   update-pre-release:
-    if: "${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}"
     uses: ./.github/workflows/update-flake.yml
     with:
       branch: pre-release

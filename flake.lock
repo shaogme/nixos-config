@@ -193,21 +193,14 @@
         ]
       },
       "locked": {
-        "dir": "extra/kernel/cachyos",
-        "lastModified": 1765771013,
-        "narHash": "sha256-zeRLNid1EcXZRnnIdje9KH3f1H9CRpHLioERpS3WuP8=",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "rev": "e423271d90d14be7275e4bb3b5a9cfe02aaf422f",
-        "type": "github"
+        "path": "./extra/kernel/cachyos",
+        "type": "path"
       },
       "original": {
-        "dir": "extra/kernel/cachyos",
-        "owner": "ShaoG-R",
-        "ref": "pre-release",
-        "repo": "nixos-config",
-        "type": "github"
-      }
+        "path": "./extra/kernel/cachyos",
+        "type": "path"
+      },
+      "parent": []
     },
     "kernel-cachyos-unstable": {
       "inputs": {
@@ -217,21 +210,14 @@
         ]
       },
       "locked": {
-        "dir": "extra/kernel/cachyos-unstable",
-        "lastModified": 1765771013,
-        "narHash": "sha256-zeRLNid1EcXZRnnIdje9KH3f1H9CRpHLioERpS3WuP8=",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "rev": "e423271d90d14be7275e4bb3b5a9cfe02aaf422f",
-        "type": "github"
+        "path": "./extra/kernel/cachyos-unstable",
+        "type": "path"
       },
       "original": {
-        "dir": "extra/kernel/cachyos-unstable",
-        "owner": "ShaoG-R",
-        "ref": "pre-release",
-        "repo": "nixos-config",
-        "type": "github"
-      }
+        "path": "./extra/kernel/cachyos-unstable",
+        "type": "path"
+      },
+      "parent": []
     },
     "lib-core": {
       "inputs": {

@@ -30,21 +30,14 @@
         ]
       },
       "locked": {
-        "dir": "core",
-        "lastModified": 1765771013,
-        "narHash": "sha256-zeRLNid1EcXZRnnIdje9KH3f1H9CRpHLioERpS3WuP8=",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "rev": "e423271d90d14be7275e4bb3b5a9cfe02aaf422f",
-        "type": "github"
+        "path": "../../core",
+        "type": "path"
       },
       "original": {
-        "dir": "core",
-        "owner": "ShaoG-R",
-        "ref": "pre-release",
-        "repo": "nixos-config",
-        "type": "github"
-      }
+        "path": "../../core",
+        "type": "path"
+      },
+      "parent": []
     },
     "nixos-facter-modules": {
       "locked": {
