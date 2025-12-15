@@ -80,11 +80,12 @@ Fine-grained Token 更安全，且支持精细化权限控制。
 ### 4.1 CI (Build & Test)
 - **文件**: `.github/workflows/ci.yml`
 - **触发**: Pull Request (针对 `main` 分支)。
+- **动态矩阵**: 自动扫描 `vps/` 目录下所有包含 `flake.nix` 的子目录作为测试对象。
 - **作用**: 
     - 检查 Flake 语法。
     - 运行 VM 集成测试 (测试多种内核配置)。
-    - 验证 VPS 静态构建。
-    - 运行 VPS 专用的 VM 测试。
+    - 验证 VPS 静态构建 (自动发现所有主机)。
+    - 运行 VPS 专用的 VM 测试 (自动发现所有主机)。
 - **注意**: 这是 `main` 分支的守门员，只有 CI 通过 (`ci-success`) 才能合并。
 
 ### 4.2 Auto Update Flake Lock
@@ -92,14 +93,15 @@ Fine-grained Token 更安全，且支持精细化权限控制。
 - **触发**: 每天 UTC 19:40 (北京时间 03:40) 或手动。
 - **作用**:
     1. 定时检查上游依赖（如 `nixpkgs`）更新。
-    2. 如果有更新，创建 PR。
-    3. 如果 CI 测试通过，自动合并 PR。
+    2. 自动遍历 `vps/` 下所有主机并更新其 `flake.lock`。
+    3. 如果有更新，创建 PR。
+    4. 如果 CI 测试通过，自动合并 PR。
 - **用途**: 保持系统处于 Bleeding Edge 状态。
 
 ### 4.3 Release System Images
 - **文件**: `.github/workflows/release.yml`
 - **触发**: 手动触发 (`workflow_dispatch`)。
-- **作用**: 构建 `tohu` 和 `hyperv` 的磁盘镜像，并发布到 GitHub Releases。
+- **作用**: 自动构建 `vps/` 下所有主机的磁盘镜像，并发布到 GitHub Releases。无需手动维护发布列表。
 - **用途**: 用于全新安装服务器。
 
 ### 4.4 Sync No-Lock-Update

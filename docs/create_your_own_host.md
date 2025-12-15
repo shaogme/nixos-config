@@ -431,24 +431,18 @@ nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
 git checkout -b add-host-<新主机名>
 ```
 
-### 2. 更新 CI 配置
+### 2. 提交更改
 
-在 `.github/workflows/vps-hosts-ci.yml` 中的 matrix 添加新主机:
+本仓库的 CI/CD 系统已实现**自动化主机发现**。你**不需要**手动修改任何 GitHub Actions 配置文件。
 
-```yaml
-matrix:
-  host: [hyperv, tohu, <新主机名>]
-```
-
-### 3. 提交更改
+只要 `vps/<新主机名>/` 目录下包含 `flake.nix` 文件，Workflow 会自动识别并将其加入测试和发布的矩阵中。
 
 ```bash
 git add vps/<新主机名>/
-git add .github/workflows/vps-hosts-ci.yml
 git commit -m "Add new host: <新主机名>"
 ```
 
-### 4. 推送并创建 PR
+### 3. 推送并创建 PR
 
 ```bash
 git push -u origin add-host-<新主机名>
@@ -456,12 +450,12 @@ git push -u origin add-host-<新主机名>
 
 在 GitHub 上创建 Pull Request 合并到 `main` 分支。
 
-### 5. 等待 CI 检查
+### 4. 等待 CI 检查
 
-- `ci.yml` 会自动运行 flake 检查和三种内核的 VM 测试
+- `ci.yml` 会自动扫描 `vps/` 目录，并为新主机运行检测。
 - 检查通过后合并 PR
-- 合并后 `vps-hosts-ci.yml` 会自动运行新主机的测试
-- 测试成功后会自动触发 `update-flake.yml` 更新依赖
+- 你的新主机现在已经正式加入到 GitOps 流程中了！
+- 未来 `update-flake.yml` 也会自动维护该主机的 `flake.lock`。
 
 ---
 

@@ -9,11 +9,21 @@ on:
         type: string
 
 jobs:
+  setup-hosts:
+    runs-on: ubuntu-latest
+    outputs:
+      hosts: ${{ steps.set-hosts.outputs.hosts }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-hosts
+        run: echo "hosts=$(bash .github/scripts/get-hosts.sh)" >> $GITHUB_OUTPUT
+
   build:
+    needs: setup-hosts
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        host: [tohu, hyperv]
+        host: ${{ fromJson(needs.setup-hosts.outputs.hosts) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
