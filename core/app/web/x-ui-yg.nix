@@ -29,6 +29,26 @@ in {
       default = "podman";
       description = "Container backend to use";
     };
+
+    # [新增] 防火墙端口范围配置
+    proxyPorts = mkOption {
+      description = "Port range to open in firewall for proxy services";
+      default = { start = 10000; end = 10005; };
+      type = types.submodule {
+        options = {
+          start = mkOption { 
+            type = types.int; 
+            default = 10000;
+            description = "Start port";
+          };
+          end = mkOption { 
+            type = types.int; 
+            default = 10005; 
+            description = "End port";
+          };
+        };
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -40,11 +60,12 @@ in {
 
     networking.firewall = {
       allowedTCPPorts = mkIf (cfg.domain == null) [ 54321 ];
+      # [修改] 使用配置的端口范围
       allowedTCPPortRanges = [
-        { from = 10000; to = 10005; }
+        { from = cfg.proxyPorts.start; to = cfg.proxyPorts.end; }
       ];
       allowedUDPPortRanges = [
-        { from = 10000; to = 10005; }
+        { from = cfg.proxyPorts.start; to = cfg.proxyPorts.end; }
       ];
     };
 
@@ -78,8 +99,6 @@ in {
     };
 
     # 使用新的 sites 抽象层
-    # 这里不需要指定 SSL 证书路径或 enableACME，nginx.nix 会自动处理
-    # 也不需要再手动允许 UDP 443 端口，nginx.nix 会自动处理
     core.app.web.nginx.sites = mkIf (cfg.domain != null) {
       "${cfg.domain}" = {
         http3 = true;

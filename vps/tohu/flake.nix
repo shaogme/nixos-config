@@ -13,6 +13,27 @@
   let
     system = "x86_64-linux";
     
+    # ==========================================
+    # Host Configuration (集中配置区域)
+    # ==========================================
+    hostConfig = {
+      name = "tohu";
+      domainRoot = "shaog.uk"; # 主域名，用于拼接
+
+      ipv4 = {
+        address = "66.235.104.29";
+        gateway = "66.235.104.1";
+      };
+
+      auth = {
+        # 你的 Hash 密码
+        rootHash = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
+        # SSH Keys
+        sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBaNS9FByCEaDjPOUpeQZg58zM2wD+jEY6SkIbE1k3Zn ed25519 256-20251206 shaog@duck.com" ];
+      };
+    };
+    # ==========================================
+    
     # 使用 kernel flake 暴露的便捷函数构建 testPkgs
     testPkgs = cachyos.lib.makeTestPkgs system;
     
@@ -45,7 +66,8 @@
     };
   in
   {
-    nixosConfigurations.tohu = nixpkgs.lib.nixosSystem {
+    # 这里的 key 也动态使用 hostConfig.name
+    nixosConfigurations.${hostConfig.name} = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inputs = lib-core.inputs; };
       modules = [
@@ -58,45 +80,50 @@
         
         # 3. 硬件/Host特有配置 (Production)
         ({ config, pkgs, modulesPath, ... }: {
-            networking.hostName = "tohu";
+            networking.hostName = hostConfig.name;
             facter.reportPath = ./facter.json; 
 
             # Services: Web Apps
             core.app.web.alist = {
                 enable = true;
-                domain = "alist.tohu.shaog.uk";
+                # 动态拼接域名: alist.tohu.shaog.uk
+                domain = "alist.${hostConfig.name}.${hostConfig.domainRoot}";
                 backend = "podman";
             };
             
             core.app.web.x-ui-yg = {
                 enable = true;
-                domain = "x-ui.tohu.shaog.uk";
+                # 动态拼接域名: x-ui.tohu.shaog.uk
+                domain = "x-ui.${hostConfig.name}.${hostConfig.domainRoot}";
                 backend = "podman";
+                
+                # 手动配置防火墙端口范围 (可选，默认是 10000-10005)
+                proxyPorts = {
+                  start = 16581;
+                  end = 16824;
+                };
             };
 
             core.app.hysteria = {
               enable = true;
               backend = "podman";
-              # 新增：指定域名，触发 hysteria.nix 的独立 ACME 集成
-              domain = "tohu.hy.shaog.uk";
+              # 动态拼接域名: tohu.hy.shaog.uk
+              domain = "${hostConfig.name}.hy.${hostConfig.domainRoot}";
               
               portHopping = {
                 enable = true;
                 range = "20000-50000";
-                interface = "eth0"; # Assuming eth0 based on common patterns, user can adjust if needed
+                interface = "eth0"; 
               };
               settings = {
                 listen = ":20000";
-                # 移除：不再使用 Hysteria 内置 ACME
-                # acme = { ... }; 
-                
                 bandwidth = {
                   up = "512 mbps";
                   down = "512 mbps";
                 };
                 auth = {
                   type = "password";
-                  password = ""; # Placeholder for auto-generation/user setting
+                  password = ""; 
                 };
                 outbounds = [
                   {
@@ -106,28 +133,29 @@
                 ];
               };
             };
+
             core.hardware.network.single-interface = {
                 enable = true;
                 ipv4 = {
-                enable = true;
-                address = "66.235.104.29";
-                prefixLength = 24;
-                gateway = "66.235.104.1";
+                    enable = true;
+                    address = hostConfig.ipv4.address;
+                    prefixLength = 24;
+                    gateway = hostConfig.ipv4.gateway;
                 };
             };
             
-            # Auth
+            # Auth - 集中引用
             core.auth.root = {
                 mode = "default"; # Key-based only
-                initialHashedPassword = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
-                authorizedKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBaNS9FByCEaDjPOUpeQZg58zM2wD+jEY6SkIbE1k3Zn ed25519 256-20251206 shaog@duck.com" ];
+                initialHashedPassword = hostConfig.auth.rootHash;
+                authorizedKeys = hostConfig.auth.sshKeys;
             };
         })
         
         # 4. 内联测试模块
         ({ config, pkgs, ... }: {
           system.build.vmTest = pkgs.testers.nixosTest {
-            name = "tohu-inline-test";
+            name = "${hostConfig.name}-inline-test";
             
             nodes.machine = { config, lib, ... }: {
                 imports = [ 
@@ -136,13 +164,10 @@
                     commonConfig
                 ];
                 
-                # 使用 kernel flake 提供的 testPkgs
                 nixpkgs.pkgs = testPkgs;
-                
-                # testers.nixosTest 不支持 specialArgs，需要在这里注入 inputs
                 _module.args.inputs = lib-core.inputs;
                 
-                networking.hostName = "tohu-test";
+                networking.hostName = "${hostConfig.name}-test";
             };
             testScript = ''
               start_all()
