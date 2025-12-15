@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - no-lock-update
+  workflow_dispatch:
 
 jobs:
   sync-to-pre-release:
