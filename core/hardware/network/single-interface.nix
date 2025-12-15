@@ -47,10 +47,7 @@ in {
         # 默认逻辑：只有v4和v6同时为静态时才默认为关闭dhcp
         # 否则（例如只有v4静态，或都没有静态）默认为开启dhcp
         # 如果显式启用了 DHCP 模块 (cfg.dhcp.enable)，则强制开启
-        useDHCP = mkMerge [
-          (mkDefault (!(cfg.ipv4.enable && cfg.ipv6.enable)))
-          (mkIf cfg.dhcp.enable true)
-        ];
+        useDHCP = if cfg.dhcp.enable then true else (!(cfg.ipv4.enable && cfg.ipv6.enable));
         
         ipv4.addresses = mkIf cfg.ipv4.enable [{
           address = cfg.ipv4.address;

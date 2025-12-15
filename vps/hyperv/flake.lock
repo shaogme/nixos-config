@@ -1,0 +1,82 @@
+{
+  "nodes": {
+    "disko": {
+      "inputs": {
+        "nixpkgs": [
+          "lib-core",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1765794845,
+        "narHash": "sha256-YD5QWlGnusNbZCqR3pxG8tRxx9yUXayLZfAJRWspq2s=",
+        "owner": "nix-community",
+        "repo": "disko",
+        "rev": "7194cfe5b7a3660726b0fe7296070eaef601cae9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "disko",
+        "type": "github"
+      }
+    },
+    "lib-core": {
+      "inputs": {
+        "disko": "disko",
+        "nixos-facter-modules": "nixos-facter-modules",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../../core",
+        "type": "path"
+      },
+      "original": {
+        "path": "../../core",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "nixos-facter-modules": {
+      "locked": {
+        "lastModified": 1765442039,
+        "narHash": "sha256-k3lYQ+A1F7aTz8HnlU++bd9t/x/NP2A4v9+x6opcVg0=",
+        "owner": "nix-community",
+        "repo": "nixos-facter-modules",
+        "rev": "9dd775ee92de63f14edd021d59416e18ac2c00f1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixos-facter-modules",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1765777093,
+        "narHash": "sha256-ed6h+jNx/4F/xOUtKlkk6zwQc/+qNhXiC+W7XCz+P6U=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "9792f74fef4620ad0aa5142e8973374c697f106a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable-small",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "lib-core": "lib-core",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
