@@ -15,55 +15,13 @@ concurrency:
 
 jobs:
   # ============================================================
-  # 任务 1: 更新所有子 Flake 的 lock 文件
-  # ============================================================
-  update-locks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          extra_nix_config: |
-            download-buffer-size = 1073741824
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
-
-      # 更新所有子 flake 和根目录的 lock 文件
-      - name: Update all flake.lock files
-        id: update-locks
-        uses: ./.github/actions/update-flake-lock
-
-      # 上传更新后的 lock 文件作为 artifact
-      - name: Upload updated flake.lock files
-        uses: actions/upload-artifact@v4
-        with:
-          name: flake-locks
-          path: ${{ steps.update-locks.outputs.lock-file-paths }}
-          retention-days: 1
-
-  # ============================================================
   # 任务 2: Flake 语法和评估检查
   # ============================================================
   check-flake:
-    needs: update-locks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Download updated flake.lock files
-        uses: actions/download-artifact@v4
-        with:
-          name: flake-locks
-          path: .
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -90,7 +48,6 @@ jobs:
   # 任务 3: VM 集成测试 (三种内核配置)
   # ============================================================
   vm-tests:
-    needs: update-locks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -99,12 +56,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Download updated flake.lock files
-        uses: actions/download-artifact@v4
-        with:
-          name: flake-locks
-          path: .
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -139,7 +90,6 @@ jobs:
   # 任务 4: VPS 静态构建检查 (确保能编译生成系统)
   # ============================================================
   vps-check-build:
-    needs: update-locks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -148,12 +98,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Download updated flake.lock files
-        uses: actions/download-artifact@v4
-        with:
-          name: flake-locks
-          path: .
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -176,7 +120,6 @@ jobs:
   # 任务 5: VPS VM 集成测试
   # ============================================================
   vps-vm-tests:
-    needs: update-locks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -185,12 +128,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Download updated flake.lock files
-        uses: actions/download-artifact@v4
-        with:
-          name: flake-locks
-          path: .
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31

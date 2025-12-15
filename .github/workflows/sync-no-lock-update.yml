@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -18,34 +19,15 @@ jobs:
           token: ${{ secrets.PAT }}
           fetch-depth: 0
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          extra_nix_config: |
-            download-buffer-size = 1073741824
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
-
-      - name: Update Flake Locks
-        uses: ./.github/actions/update-flake-lock
-
-      - name: Commit and Push to pre-release
+      - name: Sync to pre-release
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Stage updated lock files (and any other changes from the branch)
-          git add .
-          
-          # Commit if there are changes
-          if ! git diff-index --quiet HEAD; then
-            git commit -m "chore: update flake.lock from no-lock-update"
-          fi
-          
-          # Force push to pre-release to sync it with no-lock-update + lock updates
+          # Force push to pre-release to sync it with no-lock-update
           git push origin HEAD:pre-release --force
+
+      - name: Trigger Update Flake Lock on pre-release
+        run: gh workflow run update-flake.yml --ref pre-release -f branch=pre-release
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}

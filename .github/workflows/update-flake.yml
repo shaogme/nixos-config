@@ -1,9 +1,19 @@
 name: Update Flake Lock
 
 on:
-  schedule:
-    # 北京时间凌晨 3:40 (UTC 19:40)
-    - cron: '40 19 * * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to update'
+        required: true
+        default: 'main'
+        type: string
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to update'
+        required: true
+        type: string
 
 jobs:
   update-lock:
@@ -11,12 +21,11 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-
     steps:
-      - name: Checkout pre-release
+      - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: pre-release
+          ref: ${{ inputs.branch }}
           fetch-depth: 0
 
       - name: Install Nix
@@ -32,51 +41,29 @@ jobs:
           name: chaotic-nyx
           skipPush: true
 
-      - name: Check divergence from main
-        id: check_ahead
+      - name: Update Flake Locks
         run: |
-          git fetch origin main
-          count=$(git rev-list --count origin/main..HEAD)
-          echo "Ahead count: $count"
-          if [ "$count" -eq "0" ]; then
-            echo "is_ahead=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_ahead=true" >> $GITHUB_OUTPUT
-          fi
+          nix flake update --flake ./core
+          nix flake update --flake ./extra/kernel/cachyos
+          nix flake update --flake ./extra/kernel/cachyos-unstable
+          nix flake update
+          nix flake update --flake ./vps/tohu
+          nix flake update --flake ./vps/hyperv
 
-      - name: Update flake.lock
-        uses: ./.github/actions/update-flake-lock
-
-      # 场景 1：如果存在 Ahead Commit，直接 Commit 并 Push 到 pre-release
-      - name: Commit & Push to pre-release (If Ahead)
-        if: steps.check_ahead.outputs.is_ahead == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: update flake.lock"
-          branch: pre-release
-
-      # 场景 2：如果不存在 Ahead Commit，通过 PR 合并到 main
-      - name: Prepare for Main (If Not Ahead)
-        if: steps.check_ahead.outputs.is_ahead == 'false'
-        uses: ./.github/actions/replace-release-string
-
-      - name: Create PR to main (If Not Ahead)
-        if: steps.check_ahead.outputs.is_ahead == 'false'
+      - name: Create PR
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PAT }}
-          
           commit-message: "chore: update flake.lock"
           title: "chore: update flake.lock"
-          body: "Automatic update of flake.lock from pre-release state (synced with main)."
-          branch: "chore/update-flake-lock"
-          base: main
+          body: "Automatic update of flake.lock"
+          branch: "chore/update-flake-lock-${{ inputs.branch }}"
+          base: ${{ inputs.branch }}
           delete-branch: true
 
-      - name: Enable Auto Merge for PR
-        if: steps.check_ahead.outputs.is_ahead == 'false' && steps.cpr.outputs.pull-request-operation == 'created'
+      - name: Enable Auto Merge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
         env:
-          # 这里的 Token 必须有写权限，GITHUB_TOKEN 足够用于开启自动合并
           GH_TOKEN: ${{ secrets.PAT }}

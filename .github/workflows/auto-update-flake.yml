@@ -1,0 +1,20 @@
+name: Scheduled Update Flake Lock
+
+on:
+  schedule:
+    # 北京时间凌晨 3:40 (UTC 19:40)
+    - cron: '40 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-main:
+    uses: ./.github/workflows/update-flake.yml
+    with:
+      branch: main
+    secrets: inherit
+
+  update-pre-release:
+    uses: ./.github/workflows/update-flake.yml
+    with:
+      branch: pre-release
+    secrets: inherit
