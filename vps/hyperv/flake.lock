@@ -31,17 +31,16 @@
       },
       "locked": {
         "dir": "core",
-        "lastModified": 1765775036,
-        "narHash": "sha256-MnQ79/V/mJzhlQH/0ssfnPCHhjiUoqKpa8G435ajWVE=",
+        "lastModified": 1765775995,
+        "narHash": "sha256-pLp8p4bVlBrPXPtdS2H4FHELwsqfojUF2L8nb1qloII=",
         "owner": "ShaoG-R",
         "repo": "nixos-config",
-        "rev": "bb3df48992d9afd254c9b3e8df89c33d11d23f37",
+        "rev": "9964586b7428b3ab1902e54bc6a96f099618a803",
         "type": "github"
       },
       "original": {
         "dir": "core",
         "owner": "ShaoG-R",
-        "ref": "pre-release",
         "repo": "nixos-config",
         "type": "github"
       }
