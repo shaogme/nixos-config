@@ -199,30 +199,30 @@ nix run nixpkgs#mkpasswd -- -m sha-512
 
 ```mermaid
 graph TD
-    A[每日定时 / Manual] -->|Trigger| B(Auto Update Flake)
-    B --> C{Update Locks}
-    C -->|Core & Kernels| D[Update Root & Extra]
-    C -->|Auto Discovery| E[Update vps/* hosts]
+    A[每日定时 / 手动] -->|触发| B(自动更新 Flake)
+    B --> C{更新 Lock 文件}
+    C -->|Core & Extra| D[更新 Root & Extra]
+    C -->|自动发现| E[更新所有 VPS 主机]
     
-    D & E --> F[Create Pull Request]
-    F --> G[CI Checks (Dynamic Matrix)]
-    G -->|Pass| H[Auto Merge]
-    G -->|Fail| I[Notify User]
+    D & E --> F[创建 PR]
+    F --> G["CI 检查 (动态主机矩阵)"]
+    G -->|通过| H[自动合并]
+    G -->|失败| I[通知用户]
 ```
 
 #### 2. 开发与发布流程
 
 ```mermaid
 graph LR
-    A[User Dev] -->|PR| B[CI Checks]
-    B -->|Check Core| C[Flake Check & VM Tests]
-    B -->|Check Hosts| D[VPS Build & Test (All Hosts)]
+    A[用户开发] -->|提交 PR| B[CI 检查]
+    B -->|检查 Core| C[Flake 检查 & VM 测试]
+    B -->|检查主机| D["VPS 构建 & 测试 (自动发现)"]
     
-    C & D -->|All Pass| E[Merge to Main]
+    C & D -->|全部通过| E[合并到 Main]
     
-    E --> F{Need Install Media?}
-    F -->|Yes| G[Trigger 'Release System Images']
-    G --> H[Build All Hosts Images] --> I[GitHub Release]
+    E --> F{需要发布镜像?}
+    F -->|是| G[触发 Release Workflow]
+    G --> H[构建所有主机镜像] --> I[发布 GitHub Release]
 ```
 
 ---
