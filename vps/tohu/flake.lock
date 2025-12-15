@@ -8,20 +8,14 @@
         ]
       },
       "locked": {
-        "dir": "extra/kernel/cachyos-unstable",
-        "lastModified": 1765776844,
-        "narHash": "sha256-omZBTmxKKy0g6N94RldfUdhR2VHCMGAzeEahBGgSQQM=",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "rev": "0280db507b1113d81a06072efd82b2187873e3c7",
-        "type": "github"
+        "path": "../../extra/kernel/cachyos-unstable",
+        "type": "path"
       },
       "original": {
-        "dir": "extra/kernel/cachyos-unstable",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "type": "github"
-      }
+        "path": "../../extra/kernel/cachyos-unstable",
+        "type": "path"
+      },
+      "parent": []
     },
     "chaotic": {
       "inputs": {
@@ -135,20 +129,14 @@
         ]
       },
       "locked": {
-        "dir": "core",
-        "lastModified": 1765776844,
-        "narHash": "sha256-omZBTmxKKy0g6N94RldfUdhR2VHCMGAzeEahBGgSQQM=",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "rev": "0280db507b1113d81a06072efd82b2187873e3c7",
-        "type": "github"
+        "path": "../../core",
+        "type": "path"
       },
       "original": {
-        "dir": "core",
-        "owner": "ShaoG-R",
-        "repo": "nixos-config",
-        "type": "github"
-      }
+        "path": "../../core",
+        "type": "path"
+      },
+      "parent": []
     },
     "nix-github-actions": {
       "inputs": {

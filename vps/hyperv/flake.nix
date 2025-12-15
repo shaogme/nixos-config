@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
   };
 

@@ -42,13 +42,7 @@ jobs:
           skipPush: true
 
       - name: Update Flake Locks
-        run: |
-          nix flake update --flake ./core
-          nix flake update --flake ./extra/kernel/cachyos
-          nix flake update --flake ./extra/kernel/cachyos-unstable
-          nix flake update
-          nix flake update --flake ./vps/tohu
-          nix flake update --flake ./vps/hyperv
+        uses: ./.github/actions/update-flake-locks
 
       - name: Create PR
         id: cpr
