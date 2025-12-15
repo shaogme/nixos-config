@@ -117,8 +117,6 @@ let
     };
 
   # 生成最终的配置文件 (Derivation)
-  # 使用 yq-go 而不是 pkgs.formats.yaml，以获得更好的缩进格式（列表缩进），
-  # 使其与 core/app/proxy/hysteria/example.yaml 更一致。
   configFile = pkgs.runCommand "hysteria.yaml" {
     nativeBuildInputs = [ pkgs.yq-go ];
     value = builtins.toJSON hysteriaConfigRaw;
@@ -154,6 +152,13 @@ in {
   options.core.app.hysteria = {
     enable = mkEnableOption "Hysteria Server";
 
+    # 新增：通过 Nginx/Lego 托管 ACME 的域名
+    domain = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Domain for ACME (managed via nginx.nix standalone mode).";
+    };
+
     backend = mkOption {
       type = types.enum [ "docker" "podman" ];
       default = "docker";
@@ -186,7 +191,7 @@ in {
       };
     };
 
-    # 复刻 Hysteria 的配置结构 (参照 example.yaml)
+    # 复刻 Hysteria 的配置结构
     settings = {
       listen = mkOption { type = types.str; default = ":443"; description = "Server listen address."; };
       
@@ -204,7 +209,7 @@ in {
       };
 
       acme = mkOption {
-        description = "ACME configuration.";
+        description = "ACME configuration (Internal Hysteria ACME).";
         default = null;
         type = types.nullOr (types.submodule {
           options = {
@@ -483,15 +488,58 @@ in {
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.settings.tls == null || cfg.settings.acme == null;
-        message = "Hysteria: You cannot enable both TLS and ACME at the same time.";
+        assertion = !(cfg.settings.tls != null && cfg.settings.acme != null);
+        message = "Hysteria: You cannot enable both TLS and internal ACME at the same time.";
+      }
+      {
+        assertion = !(cfg.domain != null && cfg.settings.acme != null);
+        message = "Hysteria: You cannot enable 'domain' (managed ACME) and 'settings.acme' (internal ACME) at the same time.";
       }
     ];
 
-    # 1. 确保所选的容器后端已启用
+    # 1. ACME 与 Nginx 集成逻辑
+    # 当设置了 cfg.domain 时，自动配置 Nginx 的 site 和 Lego 钩子
+    core.app.web.nginx.enable = mkIf (cfg.domain != null) true;
+    
+    core.app.web.nginx.sites = mkIf (cfg.domain != null) {
+      "${cfg.domain}" = {
+        # 仅返回 404，不暴露任何服务，只为了占用端口进行 ACME 验证
+        locations."/" = { return = "404"; };
+        
+        # 核心逻辑：ACME Hook
+        # 证书更新后，将其复制到 Hysteria 的数据目录
+        # Lego 运行在 acme 用户下，需要确保目标目录可写 (通过下面的 tmpfiles 处理)
+        acmePostRun = ''
+          mkdir -p ${cfg.dataDir}/acme
+          cp fullchain.pem ${cfg.dataDir}/acme/server.crt
+          cp key.pem ${cfg.dataDir}/acme/server.key
+          
+          # 设置权限，确保容器内 (root) 或指定用户可读
+          chmod 644 ${cfg.dataDir}/acme/server.crt
+          chmod 644 ${cfg.dataDir}/acme/server.key
+          
+          # 可选：如果支持热重载，则不需要重启。Hysteria 支持文件监听热重载。
+        '';
+      };
+    };
+
+    # 自动配置 Hysteria TLS 指向复制过来的证书
+    core.app.hysteria.settings.tls = mkIf (cfg.domain != null) {
+      cert = "/acme/server.crt";
+      key = "/acme/server.key";
+    };
+
+    # 权限修复：确保 acme 用户组可以写入 Hysteria 的证书目录
+    # /var/lib/hysteria 默认是 root:root 0755
+    # 我们创建子目录 acme 并允许 acme 组写入
+    systemd.tmpfiles.rules = mkIf (cfg.domain != null) [
+      "d ${cfg.dataDir}/acme 0770 root acme -"
+    ];
+
+    # 2. 确保所选的容器后端已启用
     core.container.${cfg.backend}.enable = true;
 
-    # 2. 自动配置防火墙
+    # 3. 自动配置防火墙
     networking.firewall = {
       allowedTCPPorts = mkIf (cfg.settings.acme != null && (cfg.settings.acme.type == null || cfg.settings.acme.type == "http")) [ 80 ];
       allowedUDPPorts = let
@@ -505,7 +553,7 @@ in {
       in [ { inherit from to; } ]);
     };
 
-    # 3. 创建 Systemd 服务来管理 Docker Compose
+    # 4. 创建 Systemd 服务来管理 Docker Compose
     systemd.services.hysteria = {
       description = "Hysteria Server (${cfg.backend} compose)";
       path = if cfg.backend == "docker" then [ pkgs.docker ] else [ pkgs.podman ];
@@ -513,7 +561,6 @@ in {
       after = [ "network-online.target" ] ++ lib.optional (cfg.backend == "docker") "docker.service";
       requires = lib.optional (cfg.backend == "docker") "docker.service";
       
-      # 关键：服务启动脚本
       script = let
         composeBin = if cfg.backend == "docker" 
           then "${pkgs.docker-compose}/bin/docker-compose" 
@@ -527,18 +574,17 @@ in {
         obfsFile = "${cfg.dataDir}/obfs_password";
         authFile = "${cfg.dataDir}/auth_password";
       in ''
-        # 1. 准备数据目录
+        # 1. 准备数据目录 (确保存在，tmpfiles 也会创建但这里双重保险)
         mkdir -p ${cfg.dataDir}/acme
         
         # 2. 准备工作区
         WORK_DIR=/run/hysteria
         mkdir -p $WORK_DIR
         
-        # 3. 处理配置文件 (支持运行时生成密码)
+        # 3. 处理配置文件
         cp ${configFile} ${runtimeConfig}
 
         # 函数：处理密码生成和替换
-        # Usage: handle_secret <placeholder> <secret_file>
         handle_secret() {
           local ph=$1
           local file=$2
@@ -548,7 +594,6 @@ in {
               ${pkgs.openssl}/bin/openssl rand -hex 16 > "$file"
             fi
             SECRET=$(cat "$file")
-            # 替换占位符
             sed -i "s|$ph|$SECRET|g" ${runtimeConfig}
           fi
         }
@@ -557,15 +602,12 @@ in {
         handle_secret "${authPlaceholder}" "${authFile}"
         
         # 4. 链接 Compose 文件
-        # 注意：这里我们链接的是 Nix Store 中的只读文件
         ln -sf ${composeFile} $WORK_DIR/docker-compose.yaml
 
         # 5. 启动容器
-        # --project-name 确保容器组名称固定
         ${composeBin} -f $WORK_DIR/docker-compose.yaml -p hysteria-server up --remove-orphans
       '';
 
-      # 停止服务的逻辑
       preStop = let
         composeBin = if cfg.backend == "docker" 
           then "${pkgs.docker-compose}/bin/docker-compose" 

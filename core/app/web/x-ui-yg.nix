@@ -29,6 +29,26 @@ in {
       default = "podman";
       description = "Container backend to use";
     };
+
+    # [新增] 防火墙端口范围配置
+    proxyPorts = mkOption {
+      description = "Port range to open in firewall for proxy services";
+      default = { start = 10000; end = 10005; };
+      type = types.submodule {
+        options = {
+          start = mkOption { 
+            type = types.int; 
+            default = 10000;
+            description = "Start port";
+          };
+          end = mkOption { 
+            type = types.int; 
+            default = 10005; 
+            description = "End port";
+          };
+        };
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -40,11 +60,12 @@ in {
 
     networking.firewall = {
       allowedTCPPorts = mkIf (cfg.domain == null) [ 54321 ];
+      # [修改] 使用配置的端口范围
       allowedTCPPortRanges = [
-        { from = 10000; to = 10005; }
+        { from = cfg.proxyPorts.start; to = cfg.proxyPorts.end; }
       ];
       allowedUDPPortRanges = [
-        { from = 10000; to = 10005; }
+        { from = cfg.proxyPorts.start; to = cfg.proxyPorts.end; }
       ];
     };
 
@@ -77,10 +98,9 @@ in {
       };
     };
 
-    services.nginx.virtualHosts = mkIf (cfg.domain != null) {
+    # 使用新的 sites 抽象层
+    core.app.web.nginx.sites = mkIf (cfg.domain != null) {
       "${cfg.domain}" = {
-        forceSSL = true;
-        enableACME = true;
         http3 = true;
         quic = true;
         

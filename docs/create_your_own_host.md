@@ -101,7 +101,7 @@ cp ../tohu/flake.nix ./flake.nix
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -146,7 +146,7 @@ cp ../tohu/flake.nix ./flake.nix
         commonConfig
         
         # 3. 主机特有配置
-        ({ config, pkgs, ... }: {
+        ({ config, pkgs, modulesPath, ... }: {
           networking.hostName = "<新主机名>";
           facter.reportPath = ./facter.json;
           
@@ -164,6 +164,7 @@ cp ../tohu/flake.nix ./flake.nix
         })
         
         # 4. 内联测试模块 (见下方)
+        # ({ ... })
       ];
     };
   };
@@ -178,11 +179,12 @@ cp ../tohu/flake.nix ./flake.nix
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
     
     # CachyOS 内核 (选择稳定版或不稳定版)
-    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    # path:../../extra/kernel/cachyos 或 path:../../extra/kernel/cachyos-unstable
+    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -190,6 +192,26 @@ cp ../tohu/flake.nix ./flake.nix
   let
     system = "x86_64-linux";
     
+    # ==========================================
+    # Host Configuration (集中配置区域)
+    # ==========================================
+    hostConfig = {
+      name = "<新主机名>";
+      domainRoot = "example.com"; 
+
+      ipv4 = {
+        address = "192.168.1.100";
+        gateway = "192.168.1.1";
+      };
+
+      auth = {
+        # 你的 Hash 密码
+        rootHash = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
+        # SSH Keys
+        sshKeys = [ "ssh-ed25519 AAAA..." ];
+      };
+    };
+
     # 使用 cachyos flake 提供的 testPkgs 构建函数
     testPkgs = cachyos.lib.makeTestPkgs system;
     
@@ -205,6 +227,7 @@ cp ../tohu/flake.nix ./flake.nix
       
       core.performance.tuning.enable = true;
       core.memory.mode = "aggressive";
+      
       core.container.podman.enable = true;
       
       core.base.update = {
@@ -214,7 +237,7 @@ cp ../tohu/flake.nix ./flake.nix
     };
   in
   {
-    nixosConfigurations.<新主机名> = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.${hostConfig.name} = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inputs = lib-core.inputs; };
       modules = [
@@ -226,32 +249,33 @@ cp ../tohu/flake.nix ./flake.nix
         commonConfig
         
         # 3. 主机特有配置
-        ({ config, pkgs, ... }: {
-          networking.hostName = "<新主机名>";
+        ({ config, pkgs, modulesPath, ... }: {
+          networking.hostName = hostConfig.name;
           facter.reportPath = ./facter.json;
           
-          # 网络配置 (静态 IP 示例)
+          # 网络配置 (使用 hostConfig)
           core.hardware.network.single-interface = {
             enable = true;
             ipv4 = {
               enable = true;
-              address = "192.168.1.100";
+              address = hostConfig.ipv4.address;
               prefixLength = 24;
-              gateway = "192.168.1.1";
+              gateway = hostConfig.ipv4.gateway;
             };
           };
           
-          # 认证配置
+          # 认证配置 (使用 hostConfig)
           core.auth.root = {
             mode = "default";
-            authorizedKeys = [ "ssh-ed25519 AAAA..." ];
+            initialHashedPassword = hostConfig.auth.rootHash;
+            authorizedKeys = hostConfig.auth.sshKeys;
           };
         })
         
-        # 4. 内联测试模块 (使用 cachyos testPkgs)
+        # 4. 内联测试模块
         ({ config, pkgs, ... }: {
           system.build.vmTest = pkgs.testers.nixosTest {
-            name = "<新主机名>-inline-test";
+            name = "${hostConfig.name}-inline-test";
             
             nodes.machine = { config, lib, ... }: {
               imports = [ 
@@ -262,7 +286,7 @@ cp ../tohu/flake.nix ./flake.nix
               
               nixpkgs.pkgs = testPkgs;
               _module.args.inputs = lib-core.inputs;
-              networking.hostName = "<新主机名>-test";
+              networking.hostName = "${hostConfig.name}-test";
             };
             
             testScript = ''
@@ -346,6 +370,8 @@ in {
       
       nixpkgs.pkgs = testPkgs;
       _module.args.inputs = lib-core.inputs;
+      nixpkgs.pkgs = testPkgs;
+      _module.args.inputs = lib-core.inputs;
       networking.hostName = "<新主机名>-test";
     };
     
@@ -377,7 +403,7 @@ CachyOS 需要使用带有 chaotic overlay 的 testPkgs:
       # 使用 cachyos flake 提供的 testPkgs
       nixpkgs.pkgs = testPkgs;
       _module.args.inputs = lib-core.inputs;
-      networking.hostName = "<新主机名>-test";
+      networking.hostName = "${hostConfig.name}-test";
     };
     
     testScript = ''
@@ -405,24 +431,18 @@ nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
 git checkout -b add-host-<新主机名>
 ```
 
-### 2. 更新 CI 配置
+### 2. 提交更改
 
-在 `.github/workflows/vps-hosts-ci.yml` 中的 matrix 添加新主机:
+本仓库的 CI/CD 系统已实现**自动化主机发现**。你**不需要**手动修改任何 GitHub Actions 配置文件。
 
-```yaml
-matrix:
-  host: [hyperv, tohu, <新主机名>]
-```
-
-### 3. 提交更改
+只要 `vps/<新主机名>/` 目录下包含 `flake.nix` 文件，Workflow 会自动识别并将其加入测试和发布的矩阵中。
 
 ```bash
 git add vps/<新主机名>/
-git add .github/workflows/vps-hosts-ci.yml
 git commit -m "Add new host: <新主机名>"
 ```
 
-### 4. 推送并创建 PR
+### 3. 推送并创建 PR
 
 ```bash
 git push -u origin add-host-<新主机名>
@@ -430,12 +450,12 @@ git push -u origin add-host-<新主机名>
 
 在 GitHub 上创建 Pull Request 合并到 `main` 分支。
 
-### 5. 等待 CI 检查
+### 4. 等待 CI 检查
 
-- `ci.yml` 会自动运行 flake 检查和三种内核的 VM 测试
+- `ci.yml` 会自动扫描 `vps/` 目录，并为新主机运行检测。
 - 检查通过后合并 PR
-- 合并后 `vps-hosts-ci.yml` 会自动运行新主机的测试
-- 测试成功后会自动触发 `update-flake.yml` 更新依赖
+- 你的新主机现在已经正式加入到 GitOps 流程中了！
+- 未来 `update-flake.yml` 也会自动维护该主机的 `flake.lock`。
 
 ---
 
@@ -486,6 +506,27 @@ core.app.web.x-ui-yg = {
   enable = true;
   domain = "panel.example.com";
   backend = "podman";
+};
+
+# Hysteria 代理服务
+core.app.hysteria = {
+  enable = true;
+  backend = "podman"; # docker or podman
+  
+  # 如果设置了 domain，将自动配置 Nginx 处理 ACME
+  domain = "hy.example.com"; 
+  
+  portHopping = {
+    enable = true;
+    range = "20000-50000";
+    interface = "eth0"; 
+  };
+  
+  settings = {
+    listen = ":20000";
+    bandwidth = { up = "512 mbps"; down = "512 mbps"; };
+    auth = { type = "password"; password = "your_password"; };
+  };
 };
 ```
 

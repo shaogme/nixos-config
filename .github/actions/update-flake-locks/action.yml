@@ -10,5 +10,10 @@ runs:
         nix flake update --flake ./extra/kernel/cachyos
         nix flake update --flake ./extra/kernel/cachyos-unstable
         nix flake update
-        nix flake update --flake ./vps/tohu
-        nix flake update --flake ./vps/hyperv
+        if [ -f .github/scripts/get-hosts.sh ]; then
+          hosts=$(bash .github/scripts/get-hosts.sh | jq -r '.[]')
+          for host in $hosts; do
+            echo "Updating flake lock for host: $host"
+            nix flake update --flake ./vps/$host
+          done
+        fi

@@ -23,9 +23,10 @@ in {
     # Ensure backend is enabled
     core.container.${cfg.backend}.enable = true;
     
-    # Ensure Nginx is enabled if domain is set
+    # Ensure Nginx core is enabled if domain is set
     core.app.web.nginx.enable = mkIf (cfg.domain != null) true;
 
+    # 如果没有配置域名，则开放端口直接访问
     networking.firewall.allowedTCPPorts = mkIf (cfg.domain == null) [ 5244 ];
 
     systemd.tmpfiles.rules = [
@@ -49,10 +50,12 @@ in {
       };
     };
 
-    services.nginx.virtualHosts = mkIf (cfg.domain != null) {
+    # 使用新的 sites 抽象层
+    # 这里不需要指定 SSL 证书路径或 enableACME，nginx.nix 会自动处理
+    # 也不需要再手动允许 UDP 443 端口，nginx.nix 会自动处理
+    core.app.web.nginx.sites = mkIf (cfg.domain != null) {
       "${cfg.domain}" = {
-        forceSSL = true;
-        enableACME = true;
+        # 启用 HTTP3 和 QUIC
         http3 = true;
         quic = true;
         

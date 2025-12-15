@@ -81,11 +81,11 @@ nix build .#checks.x86_64-linux.kernel-cachyos-unstable
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
     
     # 如果使用 CachyOS 内核
-    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
   
@@ -144,6 +144,7 @@ nix build .#checks.x86_64-linux.kernel-cachyos-unstable
 | `core.app.web.nginx` | Nginx 反向代理 + ACME 自动证书 |
 | `core.app.web.alist` | Alist 文件列表服务 |
 | `core.app.web.x-ui-yg` | X-UI-YG 代理面板 |
+| `core.app.hysteria` | Hysteria 代理服务 (支持 Docker/Podman) |
 
 ### 📦 内核模块
 
@@ -262,21 +263,41 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
 以下是一个使用 CachyOS 内核的 VPS 主机配置：
 
 ```nix
-# vps/myhost/flake.nix
+# vps/tohu/flake.nix
 {
-  description = "myhost Configuration";
+  description = "tohu Configuration";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "github:ShaoG-R/nixos-config?dir=core";
+    lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
-    cachyos.url = "github:ShaoG-R/nixos-config?dir=extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, lib-core, cachyos, ... }: 
   let
     system = "x86_64-linux";
+    
+    # ==========================================
+    # Host Configuration (集中配置区域)
+    # ==========================================
+    hostConfig = {
+      name = "tohu";
+      domainRoot = "shaog.uk"; 
+
+      ipv4 = {
+        address = "66.235.104.29";
+        gateway = "66.235.104.1";
+      };
+
+      auth = {
+        rootHash = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
+        sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBaNS9FByCEaDjPOUpeQZg58zM2wD+jEY6SkIbE1k3Zn ed25519 256-20251206 shaog@duck.com" ];
+      };
+    };
+    # ==========================================
+
     testPkgs = cachyos.lib.makeTestPkgs system;
     
     commonConfig = { config, pkgs, ... }: {
@@ -291,6 +312,8 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
       
       core.performance.tuning.enable = true;
       core.memory.mode = "aggressive";
+      
+      # Container
       core.container.podman.enable = true;
       
       core.base.update = {
@@ -299,44 +322,68 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
       };
     };
   in {
-    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.${hostConfig.name} = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inputs = lib-core.inputs; };
       modules = [
         lib-core.nixosModules.default
         cachyos.nixosModules.default
         commonConfig
+        
+        # 主机特定配置
         ({ config, pkgs, ... }: {
-          networking.hostName = "myhost";
-          facter.reportPath = ./facter.json;
-          
-          core.hardware.network.single-interface = {
-            enable = true;
-            dhcp.enable = true;
-          };
-          
-          core.auth.root = {
-            mode = "default";
-            authorizedKeys = [ "ssh-ed25519 AAAA..." ];
-          };
+            networking.hostName = hostConfig.name;
+            facter.reportPath = ./facter.json; 
+    
+            # Services: Hysteria
+            core.app.hysteria = {
+              enable = true;
+              backend = "podman";
+              domain = "${hostConfig.name}.hy.${hostConfig.domainRoot}";
+              portHopping = {
+                enable = true;
+                range = "20000-50000";
+                interface = "eth0"; 
+              };
+              settings = {
+                listen = ":20000";
+                bandwidth = { up = "512 mbps"; down = "512 mbps"; };
+                auth = { type = "password"; password = ""; };
+              };
+            };
+            
+            core.hardware.network.single-interface = {
+                enable = true;
+                ipv4 = {
+                    enable = true;
+                    address = hostConfig.ipv4.address;
+                    prefixLength = 24;
+                    gateway = hostConfig.ipv4.gateway;
+                };
+            };
+            
+            core.auth.root = {
+                mode = "default";
+                initialHashedPassword = hostConfig.auth.rootHash;
+                authorizedKeys = hostConfig.auth.sshKeys;
+            };
         })
         
         # 内联测试模块
         ({ config, pkgs, ... }: {
           system.build.vmTest = pkgs.testers.nixosTest {
-            name = "myhost-inline-test";
+            name = "${hostConfig.name}-inline-test";
             
             nodes.machine = { config, lib, ... }: {
-              imports = [ 
-                lib-core.nixosModules.default 
-                cachyos.nixosModules.default
-                commonConfig
-              ];
-              nixpkgs.pkgs = testPkgs;
-              _module.args.inputs = lib-core.inputs;
-              networking.hostName = "myhost-test";
+                imports = [ 
+                    lib-core.nixosModules.default 
+                    cachyos.nixosModules.default
+                    commonConfig
+                ];
+                nixpkgs.pkgs = testPkgs;
+                _module.args.inputs = lib-core.inputs;
+                networking.hostName = "${hostConfig.name}-test";
             };
-            
             testScript = ''
               start_all()
               machine.wait_for_unit("multi-user.target")
