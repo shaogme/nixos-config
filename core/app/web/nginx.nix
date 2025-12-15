@@ -94,7 +94,7 @@ in {
       certs = mapAttrs (domain: siteCfg: {
         webroot = acmeWebRoot; # 强制使用 HTTP-01 webroot 模式
         postRun = siteCfg.acmePostRun; # 注入用户定义的钩子
-        # 可以在这里添加 reloadServices = ["nginx"]; 但通常由 NixOS 自动处理
+        reloadServices = [ "nginx" ];
       }) cfg.sites;
     };
 
