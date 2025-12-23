@@ -36,6 +36,9 @@
       system.stateVersion = "25.11";
       core.base.enable = true;
       
+      # Test requires password login allowed if no keys provided, avoiding assertions
+      core.auth.root.mode = "permit_passwd";
+      
       # Hardware
       core.hardware.type = "vps";
       core.hardware.disk = {

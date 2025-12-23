@@ -19,9 +19,7 @@
 
       auth = {
         # 你的 Hash 密码
-        rootHash = "$6$2uszfzQPOrqrAJW2$1wf8MrTFuMzTkWy5G/NFiQatq0dYVfluJ7CrS/7B88pPuqFzDWrOgNNPwWulAUhIrLpyS5Phn.KNVda81MWc70";
-        # SSH Keys
-        sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6I0JKhTjQEK7WDQUPRUGXq3oV7tWwrRtSyM6tnub/Q ed25519 256-20251217 shaog@duck.com" ];
+        rootHash = "$6$/IQfGTA5Et3n24DW$1oIQHcGY0JcoQi9SRGEORUzslt26QRU8DmuOezps7iJeiQOJG0EP4.6zl2fdKhUI3qYgo09nVBUGKQFrulsFh0";
       };
     };
     # ==========================================
@@ -97,20 +95,21 @@
         commonConfig
         
         # 3. 硬件/Host特有配置 (Production)
-        ({ config, pkgs, modulesPath, ... }: {
+        ({ config, pkgs, lib, modulesPath, ... }: {
             networking.hostName = hostConfig.name;
             facter.reportPath = ./facter.json;
             
             core.hardware.network.single-interface = {
                 enable = true;
-                dhcp.enable = true;
+                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // (hostConfig.ipv4 or {}));
+                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // (hostConfig.ipv6 or {}));
             };
             
             # Auth - 集中引用
             core.auth.root = {
-                mode = "default"; # Key-based only
+                mode = "permit_passwd"; # Key-based only
                 initialHashedPassword = hostConfig.auth.rootHash;
-                authorizedKeys = hostConfig.auth.sshKeys;
+                authorizedKeys = hostConfig.auth.sshKeys or [];
             };
         })
         
@@ -133,6 +132,7 @@
                 _module.args.inputs = lib-core.inputs;
                 
                 networking.hostName = "${hostConfig.name}-test";
+                core.auth.root.mode = "permit_passwd";
             };
             testScript = ''
               start_all()

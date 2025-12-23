@@ -32,6 +32,12 @@ in {
       prefixLength = mkOption { type = types.int; description = "Prefix Length"; };
       gateway = mkOption { type = types.nullOr types.str; default = null; description = "IPv6 Gateway"; };
     };
+
+    preference = mkOption {
+      type = types.enum [ "ipv4" "ipv6" ];
+      default = "ipv4";
+      description = "Network protocol preference. Default is ipv4, which modifies /etc/gai.conf to prefer IPv4.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -67,5 +73,18 @@ in {
         interface = "eth0";
       };
     };
+
+    environment.etc."gai.conf".text = mkIf (cfg.preference == "ipv4") ''
+      label ::1/128       0
+      label ::/0          1
+      label 2002::/16     2
+      label ::/96         3
+      label ::ffff:0:0/96 4
+      precedence ::1/128       50
+      precedence ::/0          40
+      precedence 2002::/16     30
+      precedence ::/96         20
+      precedence ::ffff:0:0/96 100
+    '';
   };
 }

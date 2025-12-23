@@ -22,7 +22,7 @@ nixos-config/
 │       ├── cachyos/           # CachyOS 稳定内核
 │       └── cachyos-unstable/  # CachyOS 不稳定内核
 └── vps/                   # 🖥️ 主机配置目录
-    ├── tohu/              # 示例主机 1 (使用 CachyOS)
+    ├── cloudcone/              # 示例主机 1 (使用 CachyOS)
     │   ├── flake.nix
     │   └── facter.json
     └── hyperv/            # 示例主机 2 (使用 XanMod)
@@ -61,274 +61,16 @@ mkdir -p vps/<新主机名>
 cd vps/<新主机名>
 ```
 
-### 第二步：确定网络配置方式
+### 第二步：在远程主机获取必要配置
 
-首先确认你的主机网络环境：
-
-👉 **[如何检测主机是否支持 DHCP](./create_your_own_host/check_dhcp.md)**
-
-根据结果选择合适的模板：
-
-**DHCP 环境 (推荐):**
+该步骤首先安装 nix (若不是 nixos)
+然后运行
 ```bash
-cp ../hyperv/flake.nix ./flake.nix
+curl -O https://raw.githubusercontent.com/ShaoG-R/nixos-config/refs/heads/main/scripts/check-net.sh && chmod +x check-net.sh && ./check-net.sh 
 ```
+将对应的静态配置复制进 hostConfig 内，对应修改 core.hardware.network.single-interface 部分
 
-**静态 IP 环境:**
-```bash
-cp ../tohu/flake.nix ./flake.nix
-```
-
-### 第三步：选择内核
-
-根据需求选择内核模块：
-
-| 内核 | 引用方式 | 适用场景 | 需要额外 overlay |
-|------|----------|---------|-----------------|
-| XanMod | `lib-core.nixosModules.kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
-| CachyOS | 单独引入 `extra/kernel/cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
-| CachyOS Unstable | 单独引入 `extra/kernel/cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
-
-### 第四步：编辑主机配置
-
-根据所选内核，参考以下模板进行配置：
-
-#### 使用 XanMod 内核 (推荐新手)
-
-```nix
-{
-  description = "<新主机名> Configuration";
-
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "path:../../core";
-    lib-core.inputs.nixpkgs.follows = "nixpkgs";
-  };
-
-  outputs = { self, nixpkgs, lib-core, ... }: 
-  let
-    commonConfig = { config, pkgs, ... }: {
-      system.stateVersion = "25.11"; 
-      core.base.enable = true;
-      
-      # ========== 硬件配置 ==========
-      core.hardware.type = "vps";  # "vps" 或 "physical"
-      core.hardware.disk = {
-        enable = true;
-        device = "/dev/sda";     # 磁盘设备
-        swapSize = 2048;         # Swap 大小 (MB)，0 禁用
-      };
-      
-      # ========== 性能配置 ==========
-      core.performance.tuning.enable = true;
-      core.memory.mode = "aggressive";  # "conservative" / "aggressive"
-      
-      # ========== 容器配置 ==========
-      core.container.podman.enable = true;
-      
-      # ========== 自动更新配置 ==========
-      core.base.update = {
-        enable = true;
-        allowReboot = true;
-      };
-    };
-  in
-  {
-    nixosConfigurations.<新主机名> = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = { inputs = lib-core.inputs; };
-      modules = [
-        # 1. 引入模块库
-        lib-core.nixosModules.default
-        lib-core.nixosModules.kernel-xanmod
-        
-        # 2. 通用配置
-        commonConfig
-        
-        # 3. 主机特有配置
-        ({ config, pkgs, modulesPath, ... }: {
-          networking.hostName = "<新主机名>";
-          facter.reportPath = ./facter.json;
-          
-          # 网络配置 (DHCP)
-          core.hardware.network.single-interface = {
-            enable = true;
-            dhcp.enable = true;
-          };
-          
-          # 认证配置
-          core.auth.root = {
-            mode = "default";
-            authorizedKeys = [ "ssh-ed25519 AAAA..." ];
-          };
-        })
-        
-        # 4. 内联测试模块 (见下方)
-        # ({ ... })
-      ];
-    };
-  };
-}
-```
-
-#### 使用 CachyOS 内核
-
-```nix
-{
-  description = "<新主机名> Configuration";
-
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
-    lib-core.url = "path:../../core";
-    lib-core.inputs.nixpkgs.follows = "nixpkgs";
-    
-    # CachyOS 内核 (选择稳定版或不稳定版)
-    # path:../../extra/kernel/cachyos 或 path:../../extra/kernel/cachyos-unstable
-    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
-    cachyos.inputs.nixpkgs.follows = "nixpkgs";
-  };
-
-  outputs = { self, nixpkgs, lib-core, cachyos, ... }: 
-  let
-    system = "x86_64-linux";
-    
-    # ==========================================
-    # Host Configuration (集中配置区域)
-    # ==========================================
-    hostConfig = {
-      name = "<新主机名>";
-      domainRoot = "example.com"; 
-
-      ipv4 = {
-        address = "192.168.1.100";
-        gateway = "192.168.1.1";
-      };
-
-      auth = {
-        # 你的 Hash 密码
-        rootHash = "$6$DhwUDApjyhVCtu4H$mr8WIUeuNrxtoLeGjrMqTtp6jQeQIBuWvq/.qv9yKm3T/g5794hV.GhG78W2rctGDaibDAgS9X9I9FuPndGC01";
-        # SSH Keys
-        sshKeys = [ "ssh-ed25519 AAAA..." ];
-      };
-    };
-
-    # 使用 cachyos flake 提供的 testPkgs 构建函数
-    testPkgs = cachyos.lib.makeTestPkgs system;
-    
-    commonConfig = { config, pkgs, ... }: {
-      system.stateVersion = "25.11"; 
-      core.base.enable = true;
-      
-      core.hardware.type = "vps";
-      core.hardware.disk = {
-        enable = true;
-        swapSize = 2048;
-      };
-      
-      core.performance.tuning.enable = true;
-      core.memory.mode = "aggressive";
-      
-      core.container.podman.enable = true;
-      
-      core.base.update = {
-        enable = true;
-        allowReboot = true;
-      };
-    };
-  in
-  {
-    nixosConfigurations.${hostConfig.name} = nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = { inputs = lib-core.inputs; };
-      modules = [
-        # 1. 引入模块库
-        lib-core.nixosModules.default
-        cachyos.nixosModules.default  # CachyOS 内核
-        
-        # 2. 通用配置
-        commonConfig
-        
-        # 3. 主机特有配置
-        ({ config, pkgs, modulesPath, ... }: {
-          networking.hostName = hostConfig.name;
-          facter.reportPath = ./facter.json;
-          
-          # 网络配置 (使用 hostConfig)
-          core.hardware.network.single-interface = {
-            enable = true;
-            ipv4 = {
-              enable = true;
-              address = hostConfig.ipv4.address;
-              prefixLength = 24;
-              gateway = hostConfig.ipv4.gateway;
-            };
-          };
-          
-          # 认证配置 (使用 hostConfig)
-          core.auth.root = {
-            mode = "default";
-            initialHashedPassword = hostConfig.auth.rootHash;
-            authorizedKeys = hostConfig.auth.sshKeys;
-          };
-        })
-        
-        # 4. 内联测试模块
-        ({ config, pkgs, ... }: {
-          system.build.vmTest = pkgs.testers.nixosTest {
-            name = "${hostConfig.name}-inline-test";
-            
-            nodes.machine = { config, lib, ... }: {
-              imports = [ 
-                lib-core.nixosModules.default 
-                cachyos.nixosModules.default
-                commonConfig
-              ];
-              
-              nixpkgs.pkgs = testPkgs;
-              _module.args.inputs = lib-core.inputs;
-              networking.hostName = "${hostConfig.name}-test";
-            };
-            
-            testScript = ''
-              start_all()
-              machine.wait_for_unit("multi-user.target")
-              machine.wait_for_unit("podman.socket")
-            '';
-          };
-        })
-      ];
-    };
-  };
-}
-```
-
-### 第五步：配置认证
-
-#### 生成密码 Hash
-
-```bash
-nix run nixpkgs#mkpasswd -- -m sha-512
-```
-
-将生成的 Hash 填入 `core.auth.root.initialHashedPassword`。
-
-#### 添加 SSH 公钥
-
-将你的 SSH 公钥添加到 `core.auth.root.authorizedKeys` 列表。
-
-查看本地公钥:
-```bash
-cat ~/.ssh/id_ed25519.pub
-```
-
-#### 认证模式说明
-
-| 模式 | SSH 密码登录 | SSH 密钥登录 | 说明 |
-|------|-------------|-------------|------|
-| `default` | ❌ 禁止 | ✅ 允许 | 推荐，更安全 |
-| `permit_passwd` | ✅ 允许 | ✅ 允许 | 密码登录，方便但不安全 |
-
-### 第六步：生成硬件报告
+#### 生成硬件报告
 
 在目标机器上运行 `nixos-facter` 生成硬件探测报告：
 
@@ -342,84 +84,36 @@ ssh root@<TARGET_IP> "nix run --extra-experimental-features 'nix-command flakes'
 
 将 `facter.json` 保存到主机目录 (`vps/<新主机名>/facter.json`)。
 
----
+### 第三步：选择内核
 
-## 添加内联测试
+根据需求选择内核模块：
 
-为了验证配置正确性，建议添加内联 VM 测试。
+| 内核 | 引用方式 | 适用场景 | 需要额外 overlay |
+|------|----------|---------|-----------------|
+| XanMod | `lib-core.nixosModules.kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
+| CachyOS | 单独引入 `extra/kernel/cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
+| CachyOS Unstable | 单独引入 `extra/kernel/cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
 
-### XanMod 内核测试模块
+### 第四步：编辑主机配置与认证
 
-```nix
-({ config, pkgs, ... }: 
-let
-  testPkgs = import lib-core.inputs.nixpkgs {
-    system = "x86_64-linux";
-    config.allowUnfree = true;
-  };
-in {
-  system.build.vmTest = pkgs.testers.nixosTest {
-    name = "<新主机名>-inline-test";
-    
-    nodes.machine = { config, lib, ... }: {
-      imports = [ 
-        lib-core.nixosModules.default 
-        lib-core.nixosModules.kernel-xanmod
-        commonConfig
-      ];
-      
-      nixpkgs.pkgs = testPkgs;
-      _module.args.inputs = lib-core.inputs;
-      nixpkgs.pkgs = testPkgs;
-      _module.args.inputs = lib-core.inputs;
-      networking.hostName = "<新主机名>-test";
-    };
-    
-    testScript = ''
-      start_all()
-      machine.wait_for_unit("multi-user.target")
-      machine.wait_for_unit("podman.socket")
-    '';
-  };
-})
-```
+请阅读下列文档，根据你的需求（内核选择、网络环境）编写 `flake.nix`：
 
-### CachyOS 内核测试模块
+👉 **[主机配置详解](./create_your_own_host/host_configuration.md)**
 
-CachyOS 需要使用带有 chaotic overlay 的 testPkgs:
+该文档包含了：
+1. **基础配置模板** (XanMod + DHCP)
+2. **进阶配置模板** (CachyOS + 静态 IP + Web 服务)
+3. **认证配置** (密码 Hash 与 SSH Key)
+4. **内联测试** 的运行方法
 
-```nix
-({ config, pkgs, ... }: {
-  system.build.vmTest = pkgs.testers.nixosTest {
-    name = "<新主机名>-inline-test";
-    
-    nodes.machine = { config, lib, ... }: {
-      imports = [ 
-        lib-core.nixosModules.default 
-        cachyos.nixosModules.default
-        commonConfig
-      ];
-      
-      # 使用 cachyos flake 提供的 testPkgs
-      nixpkgs.pkgs = testPkgs;
-      _module.args.inputs = lib-core.inputs;
-      networking.hostName = "${hostConfig.name}-test";
-    };
-    
-    testScript = ''
-      start_all()
-      machine.wait_for_unit("multi-user.target")
-      machine.wait_for_unit("podman.socket")
-    '';
-  };
-})
-```
+### 第五步：运行测试
 
-### 运行测试
+配置完成后，请按照上述文档中的说明运行内联测试，确保配置无误。
 
 ```bash
 nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
 ```
+
 
 ---
 

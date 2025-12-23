@@ -106,7 +106,7 @@ nix --version
 curl -L "https://github.com/$GITHUB_USER/nixos-config/archive/refs/heads/main.tar.gz" -o config.tar.gz
 tar -xzf config.tar.gz
 rm config.tar.gz
-cd nixos-config-main/vps/$HOST
+cd nixos-config-main
 ```
 
 ### 4. 生成硬件配置
@@ -119,7 +119,7 @@ sudo nix run \
   --extra-experimental-features "nix-command flakes" \
   --option extra-substituters https://numtide.cachix.org \
   --option extra-trusted-public-keys "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE=" \
-  github:nix-community/nixos-facter -- -o ./facter.json
+  github:nix-community/nixos-facter -- -o ./vps/$HOST/facter.json
 ```
 
 ### 5. 磁盘分区
@@ -128,9 +128,10 @@ sudo nix run \
 
 ```bash
 # 执行分区（会格式化磁盘！）
+# 注意：使用 path:$(pwd) 确保将当前根目录作为上下文，解决子 flake 引用父目录的问题
 sudo nix run \
   --extra-experimental-features "nix-command flakes" \
-  github:nix-community/disko -- --mode disko --flake .#$HOST
+  github:nix-community/disko -- --mode disko --flake "path:$(pwd)?dir=vps/$HOST#$HOST"
 
 # 验证挂载
 mount | grep /mnt
@@ -148,9 +149,56 @@ mount | grep /mnt
 
 ```bash
 # 安装 NixOS
-sudo nixos-install --flake .#$HOST --no-root-passwd --show-trace
+sudo nixos-install --flake "path:$(pwd)?dir=vps/$HOST#$HOST" --no-root-passwd --show-trace
 
 # 安装完成后重启
+reboot
+```
+
+---
+
+## 方式二 (进阶)：救援模式 + 远程 Flake (GitOps)
+
+**适用场景**: 救援模式，且主机配置 (`flake.nix` 和 `facter.json`) 已推送到 GitHub 仓库。
+
+这个方式无需手动下载配置库，直接读取远程 Flake 进行分区和安装。
+
+### 1. 准备环境
+
+设置环境变量并安装 Nix (同上)：
+
+```bash
+# 设置你的配置信息
+export HOST=hyperv
+export GITHUB_USER=ShaoG-R
+export BRANCH=pre-release  # 通常使用 main 或 pre-release
+
+# 安装 Nix
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+```
+
+### 2. 远程分区
+
+直接使用 Disko 读取远程配置进行分区：
+
+```bash
+sudo nix run \
+  --extra-experimental-features "nix-command flakes" \
+  github:nix-community/disko -- --mode disko --flake "github:$GITHUB_USER/nixos-config/$BRANCH?dir=vps/$HOST"#$HOST
+```
+
+### 3. 远程安装
+
+直接使用 nixos-install 读取远程配置安装：
+
+```bash
+sudo nixos-install --flake "github:$GITHUB_USER/nixos-config/$BRANCH?dir=vps/$HOST"#$HOST --no-root-passwd --show-trace
+```
+
+### 4. 重启
+
+```bash
 reboot
 ```
 
@@ -193,14 +241,14 @@ ssh root@$TARGET_IP "echo 'SSH OK'"
 curl -L "https://github.com/$GITHUB_USER/nixos-config/archive/refs/heads/main.tar.gz" -o config.tar.gz
 tar -xzf config.tar.gz
 rm config.tar.gz
-cd nixos-config-main/vps/$HOST
+cd nixos-config-main
 ```
 
 ### 4. 远程生成硬件报告
 
 ```bash
 # 在远程机器上生成 facter.json
-ssh root@$TARGET_IP "nix run --extra-experimental-features 'nix-command flakes' github:nix-community/nixos-facter" > ./facter.json
+ssh root@$TARGET_IP "nix run --extra-experimental-features 'nix-command flakes' github:nix-community/nixos-facter" > ./vps/$HOST/facter.json
 ```
 
 ### 5. 执行远程安装
@@ -208,7 +256,7 @@ ssh root@$TARGET_IP "nix run --extra-experimental-features 'nix-command flakes' 
 ```bash
 # 使用 nixos-anywhere 部署
 nix run github:nix-community/nixos-anywhere -- \
-  --flake .#$HOST \
+  --flake "path:$(pwd)?dir=vps/$HOST#$HOST" \
   --target-host root@$TARGET_IP \
   --build-on local
 

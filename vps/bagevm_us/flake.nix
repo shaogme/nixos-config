@@ -1,5 +1,5 @@
 {
-  description = "cloudcone Configuration";
+  description = "bagevm us Configuration";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
@@ -17,7 +17,7 @@
     # Host Configuration (集中配置区域)
     # ==========================================
     hostConfig = {
-      name = "cloudcone";
+      name = "bagevm_us";
       domainRoot = "shaog.uk"; # 主域名，用于拼接
 
       auth = {
@@ -28,14 +28,14 @@
       };
 
       ipv4 = {
-        address = "142.171.173.245";
-        prefixLength = 26;
-        gateway = "142.171.173.193";
+        address = "148.135.184.91";
+        prefixLength = 24;
+        gateway = "148.135.184.1";
       };
       ipv6 = {
-        address = "2607:f130:0:161::3c23:5d0d";
+        address = "2602:f988:90:e55::9e5";
         prefixLength = 64;
-        gateway = "2607:f130:0:161::1";
+        gateway = "2602:f988:90::1";
       };
     };
     # ==========================================

@@ -22,6 +22,7 @@
 
       ipv4 = {
         address = "66.235.104.29";
+        prefixLength = 24;
         gateway = "66.235.104.1";
       };
 
@@ -79,7 +80,7 @@
         commonConfig
         
         # 3. 硬件/Host特有配置 (Production)
-        ({ config, pkgs, modulesPath, ... }: {
+        ({ config, pkgs, lib, modulesPath, ... }: {
             networking.hostName = hostConfig.name;
             facter.reportPath = ./facter.json; 
 
@@ -138,19 +139,15 @@
 
             core.hardware.network.single-interface = {
                 enable = true;
-                ipv4 = {
-                    enable = true;
-                    address = hostConfig.ipv4.address;
-                    prefixLength = 24;
-                    gateway = hostConfig.ipv4.gateway;
-                };
+                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // (hostConfig.ipv4 or {}));
+                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // (hostConfig.ipv6 or {}));
             };
             
             # Auth - 集中引用
             core.auth.root = {
                 mode = "default"; # Key-based only
                 initialHashedPassword = hostConfig.auth.rootHash;
-                authorizedKeys = hostConfig.auth.sshKeys;
+                authorizedKeys = hostConfig.auth.sshKeys or [];
             };
         })
         
@@ -170,6 +167,7 @@
                 _module.args.inputs = lib-core.inputs;
                 
                 networking.hostName = "${hostConfig.name}-test";
+                core.auth.root.mode = "permit_passwd";
             };
             testScript = ''
               start_all()

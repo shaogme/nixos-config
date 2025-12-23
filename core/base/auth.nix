@@ -30,6 +30,13 @@ in {
   };
 
   config = {
+    assertions = [
+      {
+        assertion = cfg.root.mode == "default" -> cfg.root.authorizedKeys != [];
+        message = "core.auth.root: When mode is 'default' (prohibit-password), you MUST provide at least one authorized SSH key. Password login is disabled in this mode, so missing keys would lock you out.";
+      }
+    ];
+
     # --- Root 用户配置 ---
     users.users.root = {
       # 强制禁用 hashedPasswordFile，解决冲突
