@@ -201,8 +201,8 @@
             # 自动配置静态 IP (如果 hostConfig 中定义了 ipv4/ipv6)
             core.hardware.network.single-interface = {
                 enable = true;
-                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // hostConfig.ipv4);
-                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // hostConfig.ipv6);
+                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // (hostConfig.ipv4 or {}));
+                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // (hostConfig.ipv6 or {}));
             };
             
             # 认证

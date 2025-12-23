@@ -101,8 +101,8 @@
             
             core.hardware.network.single-interface = {
                 enable = true;
-                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // hostConfig.ipv4);
-                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // hostConfig.ipv6);
+                ipv4 = lib.mkIf (hostConfig ? ipv4) ({ enable = true; } // (hostConfig.ipv4 or {}));
+                ipv6 = lib.mkIf (hostConfig ? ipv6) ({ enable = true; } // (hostConfig.ipv6 or {}));
             };
             
             # Auth - 集中引用
