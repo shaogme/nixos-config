@@ -22,6 +22,7 @@
 
       ipv4 = {
         address = "66.235.104.29";
+        prefixLength = 24;
         gateway = "66.235.104.1";
       };
 
