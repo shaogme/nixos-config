@@ -109,7 +109,7 @@
             core.auth.root = {
                 mode = "permit_passwd"; # Key-based only
                 initialHashedPassword = hostConfig.auth.rootHash;
-                authorizedKeys = hostConfig.auth.sshKeys;
+                authorizedKeys = hostConfig.auth.sshKeys or [];
             };
         })
         

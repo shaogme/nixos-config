@@ -17,7 +17,7 @@
     # Host Configuration (集中配置区域)
     # ==========================================
     hostConfig = {
-      name = "bage.us";
+      name = "bagevm_us";
       domainRoot = "shaog.uk"; # 主域名，用于拼接
 
       auth = {
@@ -152,7 +152,7 @@
             core.auth.root = {
                 mode = "default"; # Key-based only
                 initialHashedPassword = hostConfig.auth.rootHash;
-                authorizedKeys = hostConfig.auth.sshKeys;
+                authorizedKeys = hostConfig.auth.sshKeys or [];
             };
         })
         

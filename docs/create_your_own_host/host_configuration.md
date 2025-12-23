@@ -209,7 +209,7 @@
             core.auth.root = {
                 mode = "default";
                 initialHashedPassword = hostConfig.auth.rootHash;
-                authorizedKeys = hostConfig.auth.sshKeys;
+                authorizedKeys = hostConfig.auth.sshKeys or [];
             };
 
             # 示例服务：Alist
