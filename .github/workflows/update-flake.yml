@@ -58,6 +58,13 @@ jobs:
 
       - name: Enable Auto Merge
         if: steps.cpr.outputs.pull-request-operation == 'created'
-        run: gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+        run: |
+          if [ "${{ inputs.branch }}" == "main" ]; then
+            echo "Branch is main, using auto-merge..."
+            gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+          else
+            echo "Branch is not main, merging immediately..."
+            gh pr merge --merge "${{ steps.cpr.outputs.pull-request-number }}"
+          fi
         env:
           GH_TOKEN: ${{ secrets.PAT }}
