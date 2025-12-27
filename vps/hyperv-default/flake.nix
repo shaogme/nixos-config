@@ -19,7 +19,8 @@
 
       auth = {
         # 你的 Hash 密码
-        rootHash = "$6$/IQfGTA5Et3n24DW$1oIQHcGY0JcoQi9SRGEORUzslt26QRU8DmuOezps7iJeiQOJG0EP4.6zl2fdKhUI3qYgo09nVBUGKQFrulsFh0";
+        rootHash = "$6$G3ZXEHmXJxM.3CuP$lGex9soTGknjjhmIl.hBWxZNdI.z6SX74DvGMBs7KIWFb60grwWDCSA1ep6g73HkTo/kUO7nmbXE7Wem/kEny0";
+        sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6I0JKhTjQEK7WDQUPRUGXq3oV7tWwrRtSyM6tnub/Q ed25519 256-20251217 shaog@duck.com" ];
       };
     };
     # ==========================================
@@ -84,7 +85,7 @@
             
             # Auth - 集中引用
             core.auth.root = {
-                mode = "permit_passwd"; # Key-based only
+                mode = "default"; # Key-based only
                 initialHashedPassword = hostConfig.auth.rootHash;
                 authorizedKeys = hostConfig.auth.sshKeys or [];
             };
