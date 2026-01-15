@@ -88,7 +88,7 @@
         # 3. 硬件/Host特有配置 (Production)
         ({ config, pkgs, lib, modulesPath, ... }: {
             networking.hostName = hostConfig.name;
-            facter.reportPath = ./facter.json; 
+            hardware.facter.reportPath = ./facter.json;
 
             # Services: Web Apps
             core.app.web.alist = {
