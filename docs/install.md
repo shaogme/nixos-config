@@ -18,7 +18,7 @@ export HOST=tohu
 export TARGET_IP=1.2.3.4
 
 # 你的 GitHub 用户名
-export GITHUB_USER=ShaoG-R
+export GITHUB_USER=shaogme
 ```
 
 ### 确认主机配置
@@ -170,7 +170,7 @@ reboot
 ```bash
 # 设置你的配置信息
 export HOST=hyperv
-export GITHUB_USER=ShaoG-R
+export GITHUB_USER=shaogme
 export BRANCH=pre-release  # 通常使用 main 或 pre-release
 
 # 安装 Nix
