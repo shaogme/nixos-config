@@ -58,7 +58,7 @@ auth = {
 
 你可以通过在远程主机运行以下脚本来获取当前网络配置，并直接复制结果：
 ```bash
-curl -O https://raw.githubusercontent.com/ShaoG-R/nixos-config/refs/heads/main/scripts/check-net.sh && chmod +x check-net.sh && ./check-net.sh 
+curl -O https://raw.githubusercontent.com/shaogme/nixos-config/refs/heads/main/scripts/check-net.sh && chmod +x check-net.sh && ./check-net.sh 
 ```
 
 ### 4. 磁盘配置

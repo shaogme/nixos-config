@@ -112,7 +112,7 @@ nix build .#checks.x86_64-linux.kernel-cachyos-unstable
 | `core.base.enable` | bool | false | 启用基础系统配置 (SSH, 时区, 国际化等) |
 | `core.base.update.enable` | bool | false | 启用自动更新和垃圾回收 |
 | `core.base.update.allowReboot` | bool | false | 更新后允许自动重启 |
-| `core.base.update.flakeUri` | string | `github:ShaoG-R/nixos-config?dir=vps/${hostname}` | 自动更新的 Flake 源 |
+| `core.base.update.flakeUri` | string | `github:shaogme/nixos-config?dir=vps/${hostname}` | 自动更新的 Flake 源 |
 
 **子模块:**
 - `auth.nix` - SSH 认证配置 (密钥/密码登录)

@@ -21,7 +21,7 @@ jobs:
 
       - name: Update flake URI to stable
         run: |
-          sed -i 's|github:ShaoG-R/nixos-config/pre-release|github:ShaoG-R/nixos-config|g' core/base/update.nix
+          sed -i 's|github:shaogme/nixos-config/pre-release|github:shaogme/nixos-config|g' core/base/update.nix
 
       - name: Commit and Push to release-ready
         run: |
