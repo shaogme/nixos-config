@@ -88,6 +88,7 @@
         # 3. 硬件/Host特有配置 (Production)
         ({ config, pkgs, lib, modulesPath, ... }: {
             networking.hostName = hostConfig.name;
+            nixpkgs.config.allowUnfree = true;
             hardware.facter.reportPath = ./facter.json;
 
             # Services: Web Apps
@@ -171,7 +172,6 @@
                     commonConfig
                 ];
                 
-                nixpkgs.config.allowUnfree = true;
                 _module.args.inputs = lib-core.inputs;
                 
                 networking.hostName = "${hostConfig.name}-test";
