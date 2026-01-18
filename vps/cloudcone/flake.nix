@@ -171,7 +171,7 @@
                     commonConfig
                 ];
                 
-                nixpkgs.pkgs = testPkgs;
+                nixpkgs.config.allowUnfree = true;
                 _module.args.inputs = lib-core.inputs;
                 
                 networking.hostName = "${hostConfig.name}-test";

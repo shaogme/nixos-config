@@ -77,7 +77,7 @@ in {
     virtualisation.oci-containers = {
       backend = cfg.backend;
       containers.x-ui-yg = {
-        image = "ghcr.io/shaog-r/x-ui-yg-docker:alpine";
+        image = "ghcr.io/shaogme/x-ui-yg-docker:alpine";
         # 使用 host 网络模式
         extraOptions = [
           "--network=host"
