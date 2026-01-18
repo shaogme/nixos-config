@@ -5,7 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
     lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
-    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -82,6 +82,7 @@
         # 3. 硬件/Host特有配置 (Production)
         ({ config, pkgs, lib, modulesPath, ... }: {
             networking.hostName = hostConfig.name;
+            nixpkgs.config.allowUnfree = true;
             hardware.facter.reportPath = ./facter.json; 
 
             # Services: Web Apps
@@ -165,7 +166,6 @@
                     commonConfig
                 ];
                 
-                nixpkgs.pkgs = testPkgs;
                 _module.args.inputs = lib-core.inputs;
                 
                 networking.hostName = "${hostConfig.name}-test";

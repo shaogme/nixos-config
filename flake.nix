@@ -11,9 +11,6 @@
     # Extra kernel modules
     kernel-cachyos.url = "path:./extra/kernel/cachyos";
     kernel-cachyos.inputs.nixpkgs.follows = "nixpkgs";
-    
-    kernel-cachyos-unstable.url = "path:./extra/kernel/cachyos-unstable";
-    kernel-cachyos-unstable.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { 
@@ -21,7 +18,6 @@
     nixpkgs, 
     lib-core, 
     kernel-cachyos, 
-    kernel-cachyos-unstable, 
     ... 
   }@inputs: 
   let
@@ -92,11 +88,8 @@
       config.allowUnfree = true;
     };
     
-    # CachyOS pkgs (需要 chaotic overlay)
+    # CachyOS pkgs (需要 nix-cachyos-kernel overlay)
     cachyosTestPkgs = kernel-cachyos.lib.makeTestPkgs system;
-    
-    # CachyOS Unstable pkgs  
-    cachyosUnstableTestPkgs = kernel-cachyos-unstable.lib.makeTestPkgs system;
     
     # ============================================================
     # 测试构建器
@@ -142,7 +135,6 @@
       # 内核模块选项
       kernel-xanmod = lib-core.nixosModules.kernel-xanmod;
       kernel-cachyos = kernel-cachyos.nixosModules.default;
-      kernel-cachyos-unstable = kernel-cachyos-unstable.nixosModules.default;
       
       # 完整预设: core + 内核
       full-xanmod = {
@@ -158,13 +150,6 @@
           kernel-cachyos.nixosModules.default
         ];
       };
-      
-      full-cachyos-unstable = {
-        imports = [
-          lib-core.nixosModules.default
-          kernel-cachyos-unstable.nixosModules.default
-        ];
-      };
     };
     
     # ============================================================
@@ -173,7 +158,6 @@
     
     overlays = {
       cachyos = kernel-cachyos.overlays.default;
-      cachyos-unstable = kernel-cachyos-unstable.overlays.default;
     };
     
     # ============================================================
@@ -194,13 +178,6 @@
         testPkgs = cachyosTestPkgs;
         kernelModule = kernel-cachyos.nixosModules.default;
       };
-      
-      # 测试 3: CachyOS Unstable 内核
-      kernel-cachyos-unstable = mkKernelTest {
-        name = "cachyos-unstable";
-        testPkgs = cachyosUnstableTestPkgs;
-        kernelModule = kernel-cachyos-unstable.nixosModules.default;
-      };
     };
     
     # ============================================================
@@ -215,7 +192,6 @@
           config.allowUnfree = true;
         };
         cachyos = kernel-cachyos.lib.makeTestPkgs;
-        cachyos-unstable = kernel-cachyos-unstable.lib.makeTestPkgs;
       };
       
       # 创建内核测试的便捷函数

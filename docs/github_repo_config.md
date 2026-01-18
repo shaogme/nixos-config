@@ -113,19 +113,19 @@ Fine-grained Token 更安全，且支持精细化权限控制。
 - **文件**: `.github/workflows/prepare-release.yml`
 - **触发**: 推送到 `pre-release` 分支。
 - **作用**:
-    1. 修改 `core/base/update.nix`，将自动更新源指向稳定版地址 (`github:ShaoG-R/nixos-config`)。
+    1. 修改 `core/base/update.nix`，将自动更新源指向稳定版地址 (`github:shaogme/nixos-config`)。
     2. 将修改后的代码强制推送到 `release-ready` 分支。
 - **用途**: 自动化发布流程，当预览版代码（`pre-release`）更新时，自动生成准备好发布的版本到 `release-ready` 分支。
 
 ## 5. 修改自动升级配置
 
-如果你的 GitHub 用户名不是 `ShaoG-R`，你需要修改系统内的自动升级指向，否则你的 VPS 会一直尝试拉取原作者的仓库。
+如果你的 GitHub 用户名不是 `shaogme`，你需要修改系统内的自动升级指向，否则你的 VPS 会一直尝试拉取原作者的仓库。
 
 1. 打开文件 `core/base/update.nix`。
 2. 修改 `flake` 参数：
    
    ```nix
-   # 修改 github:ShaoG-R/nixos-config 为 github:<你的用户名>/nixos-config
+   # 修改 github:shaogme/nixos-config 为 github:<你的用户名>/nixos-config
    flake = "github:<你的用户名>/nixos-config";
    ```
 

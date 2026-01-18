@@ -34,12 +34,8 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             download-buffer-size = 1073741824
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
+            extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
+            extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
 
       - name: Update Flake Locks
         uses: ./.github/actions/update-flake-locks

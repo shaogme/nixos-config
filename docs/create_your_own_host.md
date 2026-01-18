@@ -19,8 +19,7 @@ nixos-config/
 │   └── kernel/            # XanMod 内核
 ├── extra/                 # 🧪 扩展模块
 │   └── kernel/
-│       ├── cachyos/           # CachyOS 稳定内核
-│       └── cachyos-unstable/  # CachyOS 不稳定内核
+│       └── cachyos/           # CachyOS 内核
 └── vps/                   # 🖥️ 主机配置目录
     ├── cloudcone/              # 示例主机 1 (使用 CachyOS)
     │   ├── flake.nix
@@ -93,8 +92,7 @@ ssh root@<TARGET_IP> "nix run --extra-experimental-features 'nix-command flakes'
 | 内核 | 引用方式 | 适用场景 | 需要额外 overlay |
 |------|----------|---------|-----------------|
 | XanMod | `lib-core.nixosModules.kernel-xanmod` | 通用兼容性好，无需额外配置 | ❌ |
-| CachyOS | 单独引入 `extra/kernel/cachyos` | CachyOS 稳定版，性能优化 | ✅ chaotic |
-| CachyOS Unstable | 单独引入 `extra/kernel/cachyos-unstable` | CachyOS 最新版，最激进优化 | ✅ chaotic 完整 |
+| CachyOS | 单独引入 `extra/kernel/cachyos` | CachyOS  | ✅ nix-cachyos-kernel |
 
 ### 第四步：编辑主机配置与认证
 

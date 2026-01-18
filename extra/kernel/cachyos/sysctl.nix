@@ -1,5 +1,5 @@
 # 共享的 BBRv3 网络优化 sysctl 配置
-# 被 kernel/cachyos 和 kernel/cachyos-unstable 共同使用
+# 被 kernel/cachyos 使用
 {
   # --- 核心拥塞控制与队列管理 ---
   

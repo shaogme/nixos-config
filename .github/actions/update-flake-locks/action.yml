@@ -8,7 +8,6 @@ runs:
       run: |
         nix flake update --flake ./core
         nix flake update --flake ./extra/kernel/cachyos
-        nix flake update --flake ./extra/kernel/cachyos-unstable
         nix flake update
         if [ -f .github/scripts/get-hosts.sh ]; then
           hosts=$(bash .github/scripts/get-hosts.sh | jq -r '.[]')

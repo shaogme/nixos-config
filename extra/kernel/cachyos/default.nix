@@ -13,7 +13,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    boot.kernelPackages = pkgs.linuxPackages_cachyos;
+    boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 
     # scx_rustland旨在将交互式工作负载优先于后台CPU密集型工作负载
     services.scx.enable = false;

@@ -37,13 +37,9 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
+            extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
+            extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
 
       # 检查所有 flake 的语法和评估
       - name: Check all flakes
@@ -51,17 +47,16 @@ jobs:
           nix flake check --no-build
           nix flake check --no-build ./core
           nix flake check --no-build ./extra/kernel/cachyos
-          nix flake check --no-build ./extra/kernel/cachyos-unstable
 
   # ============================================================
-  # 任务 3: VM 集成测试 (三种内核配置)
+  # 任务 3: VM 集成测试 (两种内核配置)
   # ============================================================
   vm-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        kernel: [xanmod, cachyos, cachyos-unstable]
+        kernel: [xanmod, cachyos]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -71,15 +66,11 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
+            extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
+            extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
             # 确保 Nix 知道我们可以用 KVM
             system-features = kvm big-parallel nixos-test
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
 
       # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
       - name: Enable KVM group perms
@@ -114,13 +105,9 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
+            extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
+            extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
 
       - name: Build System Toplevel (${{ matrix.host }})
         # 这一步只编译不运行，确保语法和依赖没问题
@@ -145,15 +132,11 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
+            extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
+            extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
             # 确保 Nix 知道我们可以用 KVM
             system-features = kvm big-parallel nixos-test
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
 
       # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
       - name: Enable KVM group perms

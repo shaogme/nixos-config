@@ -8,7 +8,7 @@ in {
     
     flakeUri = mkOption {
       type = types.str;
-      default = "github:ShaoG-R/nixos-config?dir=vps/${config.networking.hostName}";
+      default = "github:shaogme/nixos-config?dir=vps/${config.networking.hostName}";
       description = "Flake URI for auto-upgrade";
     };
 

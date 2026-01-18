@@ -3,38 +3,39 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    
-    # CachyOS stable 使用 nyxpkgs-unstable 分支
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
   };
 
-  outputs = { self, nixpkgs, chaotic, ... }: {
+  outputs = { self, nixpkgs, nix-cachyos-kernel, ... }: {
     nixosModules = {
-      default = { pkgs, ... }: {
+      default = { pkgs, lib, config, ... }: {
         imports = [
-          chaotic.nixosModules.nyx-cache
-          chaotic.nixosModules.nyx-overlay
-          chaotic.nixosModules.nyx-registry
           ./default.nix
         ];
 
-        # 在自动更新前先拉取 chaotic-nyx 缓存配置
-        systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = 
-          "${pkgs.cachix}/bin/cachix use chaotic-nyx";
+        nixpkgs.overlays = [
+          nix-cachyos-kernel.overlays.pinned
+        ];
 
-        # 安装 cachix 工具
-        environment.systemPackages = [ pkgs.cachix ];
+        nix.settings = {
+          substituters = [
+            "https://attic.xuyh0120.win/lantian"
+            "https://cache.garnix.io"
+          ];
+          trusted-public-keys = [
+            "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+            "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+          ];
+        };
       };
     };
     
-    # 暴露 overlay 供外部使用
-    overlays.default = chaotic.overlays.default;
+    overlays.default = nix-cachyos-kernel.overlays.default;
     
-    # 提供便捷函数用于构建测试 pkgs
     lib.makeTestPkgs = system: import nixpkgs {
       inherit system;
       config.allowUnfree = true;
-      overlays = [ chaotic.overlays.default ];
+      overlays = [ nix-cachyos-kernel.overlays.default ];
     };
   };
 }
