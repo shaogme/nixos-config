@@ -35,12 +35,6 @@ jobs:
           extra_nix_config: |
             download-buffer-size = 1073741824
 
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v16
-        with:
-          name: chaotic-nyx
-          skipPush: true
-
       - name: Update Flake Locks
         uses: ./.github/actions/update-flake-locks
 

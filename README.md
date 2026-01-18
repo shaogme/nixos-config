@@ -26,13 +26,10 @@ nixos-config/
 │   └── kernel/            # XanMod 内核模块
 ├── extra/                 # 🧪 扩展模块 (需要外部依赖)
 │   └── kernel/
-│       ├── cachyos/           # CachyOS 稳定内核 (需要 chaotic)
-│       │   ├── flake.nix
-│       │   ├── default.nix
-│       │   └── sysctl.nix
-│       └── cachyos-unstable/  # CachyOS 不稳定内核
+│       └── cachyos/           # CachyOS 内核
 │           ├── flake.nix
-│           └── default.nix
+│           ├── default.nix
+│           └── sysctl.nix
 ├── vps/                   # 🖥️ 独立主机配置
 │   ├── tohu/              # tohu 主机 (独立 flake)
 │   │   ├── flake.nix
@@ -53,11 +50,9 @@ nixos-config/
 |--------|------|
 | `nixosModules.default` | 核心模块 (app + base + hardware)，不含内核 |
 | `nixosModules.kernel-xanmod` | XanMod 内核 (无需额外 overlay) |
-| `nixosModules.kernel-cachyos` | CachyOS 稳定内核 + chaotic 缓存 |
-| `nixosModules.kernel-cachyos-unstable` | CachyOS 不稳定内核 + 完整 chaotic overlay |
+| `nixosModules.kernel-cachyos` | CachyOS 内核 + nix-cachyos-kernel 缓存 |
 | `nixosModules.full-xanmod` | 完整预设: core + XanMod |
 | `nixosModules.full-cachyos` | 完整预设: core + CachyOS |
-| `nixosModules.full-cachyos-unstable` | 完整预设: core + CachyOS Unstable |
 
 #### 2. CI 集成测试
 
@@ -70,7 +65,6 @@ nix flake check
 # 运行单个内核测试
 nix build .#checks.x86_64-linux.kernel-xanmod
 nix build .#checks.x86_64-linux.kernel-cachyos
-nix build .#checks.x86_64-linux.kernel-cachyos-unstable
 ```
 
 #### 3. 主机配置 (`vps/<hostname>/flake.nix`)
@@ -85,7 +79,7 @@ nix build .#checks.x86_64-linux.kernel-cachyos-unstable
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
     
     # 如果使用 CachyOS 内核
-    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
   
@@ -151,8 +145,7 @@ nix build .#checks.x86_64-linux.kernel-cachyos-unstable
 | 模块 | 位置 | 描述 | 需要额外 overlay |
 |------|------|------|-----------------|
 | `kernel-xanmod` | `core/kernel/` | XanMod 稳定内核 (通用兼容性好) | ❌ |
-| `kernel-cachyos` | `extra/kernel/cachyos/` | CachyOS 稳定版内核 + 性能优化补丁 | ✅ chaotic |
-| `kernel-cachyos-unstable` | `extra/kernel/cachyos-unstable/` | CachyOS 最新内核 + 完整 chaotic overlay | ✅ chaotic |
+| `kernel-cachyos` | `extra/kernel/cachyos/` | CachyOS 内核 | ✅ nix-cachyos-kernel |
 
 ---
 
@@ -285,7 +278,7 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable-small";
     lib-core.url = "path:../../core";
     lib-core.inputs.nixpkgs.follows = "nixpkgs";
-    cachyos.url = "path:../../extra/kernel/cachyos-unstable";
+    cachyos.url = "path:../../extra/kernel/cachyos";
     cachyos.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -394,7 +387,6 @@ GitHub Actions (`update-flake.yml`) 会每天自动检查并更新 `flake.lock`�
                     cachyos.nixosModules.default
                     commonConfig
                 ];
-                nixpkgs.pkgs = testPkgs;
                 _module.args.inputs = lib-core.inputs;
                 networking.hostName = "${hostConfig.name}-test";
             };
