@@ -6,6 +6,7 @@
     
     # CachyOS unstable 使用 chaotic.nixosModules.default (包含更多实验性功能)
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    chaotic.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, chaotic, ... }: {
