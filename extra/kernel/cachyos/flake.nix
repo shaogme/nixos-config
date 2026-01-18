@@ -6,6 +6,7 @@
     
     # CachyOS stable 使用 nyxpkgs-unstable 分支
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    chaotic.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, chaotic, ... }: {
