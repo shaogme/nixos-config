@@ -29,10 +29,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: shaogme/speedy-nix@main
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            experimental-features = nix-command flakes
             download-buffer-size = 1073741824
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
