@@ -37,6 +37,14 @@ jobs:
             download-buffer-size = 1073741824
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
+            system-features = kvm benchmark big-parallel nixos-test uid-range
+
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
 
       - name: Build Disko Images
         run: nix build ./vps/${{ matrix.host }}#nixosConfigurations.${{ matrix.host }}.config.system.build.diskoImages
