@@ -14,7 +14,7 @@ jobs:
     outputs:
       hosts: ${{ steps.set-hosts.outputs.hosts }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: set-hosts
         run: echo "hosts=$(bash .github/scripts/get-hosts.sh)" >> $GITHUB_OUTPUT
 
@@ -26,7 +26,7 @@ jobs:
         host: ${{ fromJson(needs.setup-hosts.outputs.hosts) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: shaogme/speedy-nix@main

@@ -19,7 +19,7 @@ jobs:
     outputs:
       hosts: ${{ steps.set-hosts.outputs.hosts }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: set-hosts
         run: echo "hosts=$(bash .github/scripts/get-hosts.sh)" >> $GITHUB_OUTPUT
 
