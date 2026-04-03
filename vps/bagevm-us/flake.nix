@@ -93,15 +93,22 @@
             # Services: Web Apps
             core.app.web.alist = {
                 enable = true;
-                # 动态拼接域名: alist.cloudcone.shaog.uk
+                # 动态拼接域名: alist.bagevm-us.shaog.uk
                 domain = "alist.${hostConfig.name}.${hostConfig.domainRoot}";
+                backend = "podman";
+            };
+
+            core.app.web.vaultwarden = {
+                enable = true;
+                # 动态拼接域名: vw.bagevm-us.shaog.uk
+                domain = "vw.${hostConfig.name}.${hostConfig.domainRoot}";
                 backend = "podman";
             };
             
             # cat /var/lib/x-ui-yg/init.log 获取账号密码
             core.app.web.x-ui-yg = {
                 enable = true;
-                # 动态拼接域名: x-ui.cloudcone.shaog.uk
+                # 动态拼接域名: x-ui.bagevm-us.shaog.uk
                 domain = "x-ui.${hostConfig.name}.${hostConfig.domainRoot}";
                 backend = "podman";
                 
