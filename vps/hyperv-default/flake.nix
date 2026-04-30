@@ -97,7 +97,7 @@
           system.build.vmTest = pkgs.testers.nixosTest {
             name = "${hostConfig.name}-inline-test";
             
-            nodes.machine = { config, lib, ... }: {
+            nodes.vps = { config, lib, ... }: {
                 imports = [ 
                     lib-core.nixosModules.default 
                     commonConfig
@@ -114,8 +114,8 @@
             };
             testScript = ''
               start_all()
-              machine.wait_for_unit("multi-user.target")
-              machine.wait_for_unit("podman.socket")
+              vps.wait_for_unit("multi-user.target")
+              vps.wait_for_unit("podman.socket")
             '';
           };
         })

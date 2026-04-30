@@ -59,21 +59,21 @@
     # 共用的测试脚本
     testScript = ''
       start_all()
-      machine.wait_for_unit("multi-user.target")
-      machine.wait_for_unit("podman.socket")
+      vps.wait_for_unit("multi-user.target")
+      vps.wait_for_unit("podman.socket")
       
       # 验证内核版本
-      kernel_version = machine.succeed("uname -r").strip()
+      kernel_version = vps.succeed("uname -r").strip()
       print(f"Kernel version: {kernel_version}")
       
       # 验证 BBR 拥塞控制算法已启用
-      congestion = machine.succeed("sysctl -n net.ipv4.tcp_congestion_control").strip()
+      congestion = vps.succeed("sysctl -n net.ipv4.tcp_congestion_control").strip()
       assert congestion == "bbr", f"Expected bbr, got {congestion}"
       print(f"TCP congestion control: {congestion}")
       
       # 验证 BBR 在可用拥塞控制算法列表中
       # 注意: CachyOS 内核将 BBR 内置编译，所以不能用 lsmod 检查
-      available = machine.succeed("cat /proc/sys/net/ipv4/tcp_available_congestion_control").strip()
+      available = vps.succeed("cat /proc/sys/net/ipv4/tcp_available_congestion_control").strip()
       assert "bbr" in available, f"bbr not in available algorithms: {available}"
       print(f"Available congestion controls: {available}")
     '';
@@ -104,7 +104,7 @@
     }: nixpkgs.legacyPackages.${system}.testers.nixosTest {
       name = "kernel-test-${name}";
       
-      nodes.machine = { config, lib, ... }: {
+      nodes.vps = { config, lib, ... }: {
         imports = [ 
           lib-core.nixosModules.default 
           kernelModule
