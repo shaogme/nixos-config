@@ -201,7 +201,7 @@ nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
         ({ config, pkgs, ... }: {
           system.build.vmTest = pkgs.testers.nixosTest {
             name = "${hostConfig.name}-inline-test";
-            nodes.machine = { config, lib, ... }: {
+            nodes.vps = { config, lib, ... }: {
                 imports = [ 
                     lib-core.nixosModules.default 
                     lib-core.nixosModules.kernel-xanmod
@@ -213,8 +213,8 @@ nix build .#nixosConfigurations.<新主机名>.config.system.build.vmTest
             };
             testScript = ''
               start_all()
-              machine.wait_for_unit("multi-user.target")
-              machine.wait_for_unit("podman.socket")
+              vps.wait_for_unit("multi-user.target")
+              vps.wait_for_unit("podman.socket")
             '';
           };
         })

@@ -29,14 +29,13 @@ jobs:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: shaogme/speedy-nix@main
+        uses: cachix/install-nix-action@master
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            experimental-features = nix-command flakes
-            download-buffer-size = 1073741824
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
+            download-buffer-size = 1073741824
 
       - name: Update Flake Locks
         uses: ./.github/actions/update-flake-locks

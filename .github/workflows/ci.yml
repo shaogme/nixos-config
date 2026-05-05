@@ -33,11 +33,10 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: shaogme/speedy-nix@main
+        uses: cachix/install-nix-action@master
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            experimental-features = nix-command flakes
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
@@ -63,15 +62,13 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: shaogme/speedy-nix@main
+        uses: cachix/install-nix-action@master
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            experimental-features = nix-command flakes
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
-            # 确保 Nix 知道我们可以用 KVM
             system-features = kvm big-parallel nixos-test
 
       # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
@@ -103,11 +100,10 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: shaogme/speedy-nix@main
+        uses: cachix/install-nix-action@master
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            experimental-features = nix-command flakes
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
@@ -131,15 +127,13 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: shaogme/speedy-nix@main
+        uses: cachix/install-nix-action@master
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            experimental-features = nix-command flakes
             extra-substituters = https://attic.xuyh0120.win/lantian https://cache.garnix.io
             extra-trusted-public-keys = lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc= cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=
             download-buffer-size = 1073741824
-            # 确保 Nix 知道我们可以用 KVM
             system-features = kvm big-parallel nixos-test
 
       # 关键步骤：确保 Runner 能够使用硬件虚拟化加速
